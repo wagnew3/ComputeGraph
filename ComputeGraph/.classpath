@@ -2,5 +2,32 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry kind="lib" path="libraries/JCuda-All-0.7.5-bin-Linux-x86_64/jcublas-0.7.5.jar"/>
+	<classpathentry kind="lib" path="libraries/JCuda-All-0.7.5-bin-Linux-x86_64/jcufft-0.7.5.jar"/>
+	<classpathentry kind="lib" path="libraries/JCuda-All-0.7.5-bin-Linux-x86_64/jcuda-0.7.5.jar"/>
+	<classpathentry kind="lib" path="libraries/JCuda-All-0.7.5-bin-Linux-x86_64/jcurand-0.7.5.jar"/>
+	<classpathentry kind="lib" path="libraries/JCuda-All-0.7.5-bin-Linux-x86_64/jcusolver-0.7.5.jar"/>
+	<classpathentry kind="lib" path="libraries/JCuda-All-0.7.5-bin-Linux-x86_64/jcusparse-0.7.5.jar"/>
+	<classpathentry kind="lib" path="libraries/commons-math3-3.3/commons-math3-3.3.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/ComputeGraph/libraries/commons-math3-3.3/commons-math3-3.3-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libraries/gs-algo-1.2/gs-algo-1.2.jar" sourcepath="libraries/gs-algo-1.2/gs-algo-1.2-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/ComputeGraph/libraries/gs-algo-1.2/gs-algo-1.2-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libraries/gs-core-1.2/gs-core-1.2.jar" sourcepath="libraries/gs-core-1.2/gs-core-1.2-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/ComputeGraph/libraries/gs-core-1.2/gs-core-1.2-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libraries/gs-ui-1.2/gs-ui-1.2.jar" sourcepath="libraries/gs-ui-1.2/gs-ui-1.2-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/ComputeGraph/libraries/gs-ui-1.2/gs-ui-1.2-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libraries/jblas/jblas-static-Linux-amd64-1.2.3-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
