@@ -101,5 +101,11 @@ public abstract class Matrix implements Serializable
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	public Matrix sgemv(boolean b, float f, Matrix paramMatrix, Matrix matrix, int i, float g, Matrix objectiveDiff,
+			int j, boolean c, Matrix objectiveDiff2) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

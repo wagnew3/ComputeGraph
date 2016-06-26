@@ -4,7 +4,6 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.graphstream.graph.Edge;
-import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.SingleGraph;
 
 import function.Function;
@@ -41,20 +40,39 @@ public class ComputeGraph extends SingleGraph
 		newNode.setFunction(function);
 	}
 	
+	@Override
+	public Edge addEdge(String id, String index1, String index2)
+	{
+		Edge edge=super.addEdge(id+" "+index1+"_"+index2, index1, index2);
+		return edge;
+	}
+	
+	public Edge addEdge(String index1, String index2)
+	{
+		Edge edge=super.addEdge("in "+index1+"_"+index2, index1, index2);
+		return edge;
+	}
+	
 	public Hashtable<String, Matrix> getOutput(Hashtable<String, Matrix> inputs)
+	{
+		Hashtable<String, Matrix> outputs=new Hashtable<>();
+		Hashtable<String, Matrix> allOutputs=compute(inputs);
+		for(String outputName: outputVertices.keySet())
+		{
+			outputs.put(outputName, allOutputs.get(outputName));
+		}
+		return outputs;
+	}
+	
+	public Hashtable<String, Matrix> compute(Hashtable<String, Matrix> inputs)
 	{
 		Hashtable<String, String> outputted=new Hashtable<>();
 		Hashtable<String, Matrix> intermediateOutputs=new Hashtable<>();
-		Hashtable<String, Matrix> outputs=new Hashtable<>();
 		for(String inputName: inputs.keySet())
 		{
 			if(outputVertices.get(inputName)==null)
 			{
 				intermediateOutputs.put(inputName, inputs.get(inputName));
-			}
-			else
-			{
-				outputs.put(inputName, inputs.get(inputName));
 			}
 			outputted.put(inputName, inputName);
 		}
@@ -73,30 +91,27 @@ public class ComputeGraph extends SingleGraph
 						Hashtable<String, Matrix> nextNodeInput=new Hashtable<>();
 						for(Edge nextNodeEdge: nextNode.getEachEdge())
 						{
-							if(outputted.get(computedNodeEdge.getNode0().getId())==null)
+							if(outputted.get(nextNodeEdge.getNode0().getId())==null)
 							{
 								allComputed=false;
 							}
 							else
 							{
-								nextNodeInput.put(computedNodeEdge.getNode0().getId(),
-										intermediateOutputs.get(computedNodeEdge.getNode0().getId()));
+								String name=nextNodeEdge.getId().substring(0, nextNodeEdge.getId().lastIndexOf(' '));
+								nextNodeInput.put(name,
+										intermediateOutputs.get(nextNodeEdge.getNode0().getId()));
 							}
 						}
 						if(allComputed)
 						{
 							Matrix nextNodeOutput=nextNode.getOutput(nextNodeInput);
 							intermediateOutputs.put(nextNode.getId(), nextNodeOutput);
-							if(outputVertices.get(nextNode.getId())!=null)
-							{
-								outputs.put(nextNode.getId(), nextNodeOutput);
-							}
 						}
 					}
 				}
 			}
 		}
-		return outputs;
+		return intermediateOutputs;
 	}
 
 }
