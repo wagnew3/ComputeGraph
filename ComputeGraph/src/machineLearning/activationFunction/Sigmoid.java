@@ -72,6 +72,7 @@ public class Sigmoid extends DifferentialbleFunction
 	public matrix.Matrix apply(Hashtable<String, matrix.Matrix> input) 
     {
     	Matrix inputMatrix=input.get("in");
+    	Matrix output=new FMatrix(inputMatrix.getRows(), inputMatrix.getCols());
 
     	if(FMatrix.GPU)
 		{
@@ -109,9 +110,9 @@ public class Sigmoid extends DifferentialbleFunction
 		{
 			for(int inputInd=0; inputInd<inputMatrix.getRows(); inputInd++)
 			{
-				inputMatrix.set(inputInd, 0, (float)(1/(1+Math.exp(-inputMatrix.get(inputInd, 0)))));
+				output.set(inputInd, 0, (float)(1/(1+Math.exp(-inputMatrix.get(inputInd, 0)))));
 			}
-			return inputMatrix;
+			return output;
 		}
 	}
 
@@ -120,7 +121,11 @@ public class Sigmoid extends DifferentialbleFunction
 			Hashtable<String, matrix.Matrix> dInput) 
 	{
 		Matrix inputMatrix=input.get("in");
-		Matrix dInputMatrix=dInput.get("in");
+		Matrix dInputMatrix=null;
+		for(String key: dInput.keySet())
+		{
+			dInputMatrix=dInput.get(key);
+		}
 		
 		Matrix derivative=new FMatrix(inputMatrix.getRows(), inputMatrix.getCols());
 		inputMatrix.copyTo(derivative);

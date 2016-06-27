@@ -142,14 +142,20 @@ public class ComputeGraph extends SingleGraph
 					}
 					else
 					{
-						derivatives.put(computedNodeEdge.getId().substring(0, computedNodeEdge.getId().indexOf(' ')),
-								derivatives.get(computedNodeEdge.getNode1().getId()));
+						if(objectiveDerivatives.get(computedNodeEdge.getNode1().getId())!=null)
+						{
+							derivatives.put(computedNodeEdge.getId().substring(0, computedNodeEdge.getId().indexOf(' ')),
+									objectiveDerivatives.get(computedNodeEdge.getNode1().getId()));
+						}
 					}
 				}
 				Matrix[] nextNodeDerivatives=((DifferentialbleFunction)nextComputeNode.getFunction())
 						.differentiate(nextNodeInputs, derivatives);
 				objectiveDerivatives.put(nextComputeNode.getId(), nextNodeDerivatives[0]);
-				parameterDerivatives.put(nextComputeNode.getId(), nextNodeDerivatives[1]);
+				if(nextNodeDerivatives[1]!=null)
+				{
+					parameterDerivatives.put(nextComputeNode.getId(), nextNodeDerivatives[1]);
+				}
 			}
 		}
 		return new Hashtable[]{objectiveDerivatives, parameterDerivatives};

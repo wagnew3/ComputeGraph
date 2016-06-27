@@ -77,7 +77,12 @@ public class TestWorking
 		
 		Hashtable<String, Matrix> inputs=new Hashtable<>();
 		inputs.put("input", new FMatrix(new float[][]{new float[]{0.05f}, new float[]{0.10f}}));
+		inputs.put("training outputs", new FMatrix(new float[][]{new float[]{0.01f}, new float[]{0.99f}}));
 		Matrix output=cg.getOutput(inputs).get("output sigmoid");
+		
+		outputVertices=new ArrayList<>();
+		outputVertices.add("euclideanCost");
+		cg.setOutputVertices(outputVertices);
 		
 		Hashtable<String, Matrix>[] derivatives=cg.derive(inputs);
 		Hashtable<String, Matrix> objectiveDerivatives=derivatives[0];
