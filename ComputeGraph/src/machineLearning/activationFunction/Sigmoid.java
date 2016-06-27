@@ -119,21 +119,20 @@ public class Sigmoid extends DifferentialbleFunction
 	public Matrix[] differentiate(Hashtable<String, matrix.Matrix> input,
 			Hashtable<String, matrix.Matrix> dInput) 
 	{
-		Matrix inputMatrix=null;
-    	for(Matrix mat: input.values())
-    	{
-    		inputMatrix=mat;
-    		break;
-    	}
-    	
+		Matrix inputMatrix=input.get("in");
+		Matrix dInputMatrix=dInput.get("in");
+		
+		Matrix derivative=new FMatrix(inputMatrix.getRows(), inputMatrix.getCols());
+		inputMatrix.copyTo(derivative);
+
 		if(FMatrix.GPU)
 		{
-			((FMatrix)inputMatrix).sendToGPU();
+			((FMatrix)derivative).sendToGPU();
 			
 			int maxThreads=128;
 	    	int maxBlocks=64;
-	    	int numBlocks = getNumBlocks(inputMatrix.getLen(), maxBlocks, maxThreads);
-	        int numThreads = getNumThreads(inputMatrix.getLen(), maxBlocks, maxThreads);
+	    	int numBlocks = getNumBlocks(derivative.getLen(), maxBlocks, maxThreads);
+	        int numThreads = getNumThreads(derivative.getLen(), maxBlocks, maxThreads);
 	        
 	        int sharedMemSize = numThreads * Sizeof.FLOAT;
 	        if (numThreads <= 32) 
@@ -142,8 +141,8 @@ public class Sigmoid extends DifferentialbleFunction
 	        }
 	        
 	        Pointer kernelParameters = Pointer.to(
-	            Pointer.to(((FMatrix)inputMatrix).gpuPointer),
-	            Pointer.to(new int[]{inputMatrix.getLen()})
+	            Pointer.to(((FMatrix)derivative).gpuPointer),
+	            Pointer.to(new int[]{derivative.getLen()})
 	        );
 	
 	        // Call the kernel function.
@@ -155,16 +154,16 @@ public class Sigmoid extends DifferentialbleFunction
 	        );
 	        //cuCtxSynchronize();
 	            
-	        return new Matrix[]{inputMatrix, null};
+	        return new Matrix[]{derivative.oebemult(dInputMatrix), null};
 		}
 		else
 		{
-			for(int inputInd=0; inputInd<inputMatrix.getRows(); inputInd++)
+			for(int inputInd=0; inputInd<derivative.getRows(); inputInd++)
 			{
-				inputMatrix.set(inputInd, 0, (float) ((1/(1+Math.exp(-inputMatrix.get(inputInd, 0))))
-						*(1.0f-(1/(1+Math.exp(-inputMatrix.get(inputInd, 0)))))));
+				derivative.set(inputInd, 0, (float) ((1/(1+Math.exp(-derivative.get(inputInd, 0))))
+						*(1.0f-(1/(1+Math.exp(-derivative.get(inputInd, 0)))))));
 			}
-			return new Matrix[]{inputMatrix, null};
+			return new Matrix[]{derivative.oebemult(dInputMatrix), null};
 		}
 	}
 

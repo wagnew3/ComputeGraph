@@ -36,7 +36,6 @@ import jcuda.driver.CUmodule;
 import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.JCublas;
 import jcuda.jcublas.cublasHandle;
-import learningRule.MPBackPropGradientDescent;
 
 public class FMatrix extends Matrix
 {

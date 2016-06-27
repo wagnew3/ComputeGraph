@@ -13,7 +13,7 @@ public class ComputeNode extends SingleNode
 
 	Function function;
 	
-	protected ComputeNode(AbstractGraph graph, String id)
+	public ComputeNode(AbstractGraph graph, String id)
 	{
 		super(graph, id);
 	}
@@ -21,6 +21,11 @@ public class ComputeNode extends SingleNode
 	public Matrix getOutput(Hashtable<String, Matrix> input)
 	{
 		return function.apply(input);
+	}
+	
+	public Function getFunction()
+	{
+		return function;
 	}
 	
 	public void setFunction(Function setFunction)
