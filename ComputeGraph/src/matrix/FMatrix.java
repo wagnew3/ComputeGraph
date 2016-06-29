@@ -293,6 +293,10 @@ public class FMatrix extends Matrix
 		int tempColumns=columns;
 		columns=rows;
 		rows=tempColumns;
+		if(!GPU)
+		{
+			mat=mat.transpose();
+		}
 		return this;
 	}
 	
@@ -316,6 +320,8 @@ public class FMatrix extends Matrix
 		}
 		else
 		{
+			FloatMatrix lMat=mat;
+			FloatMatrix rMat=((FMatrix)toMultiplyBy).mat;
 			matC.mat=mat.mmul(((FMatrix)toMultiplyBy).mat);
 			return matC;
 		}

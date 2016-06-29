@@ -1,5 +1,8 @@
 package test;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -7,6 +10,7 @@ import java.util.List;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 import graph.ComputeGraph;
+import machineLearning.Learner.BackPropagation;
 import machineLearning.activationFunction.Sigmoid;
 import machineLearning.costFunction.Euclidean;
 import machineLearning.generalFunctions.Input;
@@ -18,37 +22,14 @@ import matrix.Matrix;
 public class TestWorking 
 {
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
-		testNetworkOutput();
+		//testNetworkOutput();
+		testMNIST();
 	}
 	
 	static void testNetworkOutput()
 	{
-		/*
-		ComputeGraph cg=new ComputeGraph("standard network");
-		cg.addNode("input", new Input());
-		cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(2, 2, 2)));
-		cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(2, 1)));
-		cg.addNode("hidden1 sigmoid", new Sigmoid());
-		cg.addNode("output weights", new MMult(generateWeightMatrix(2, 2, 2)));
-		cg.addNode("output biases", new MAdd(generateBiasMatrix(2, 1)));
-		cg.addNode("output sigmoid", new Sigmoid());
-		
-		
-		cg.addNode("training outputs", new Input());
-		cg.addNode("euclideanCost", new Euclidean());
-		
-		cg.addEdge("input", "hidden1 weights");
-		cg.addEdge("hidden1 weights", "hidden1 biases");
-		cg.addEdge("hidden1 biases", "hidden1 sigmoid");
-		cg.addEdge("hidden1 sigmoid", "output weights");
-		cg.addEdge("output weights", "output biases");
-		cg.addEdge("output biases", "output sigmoid");
-		cg.addEdge("network output", "output sigmoid", "euclideanCost");
-		cg.addEdge("train output", "training outputs", "euclideanCost");
-		*/
-		
 		ComputeGraph cg=new ComputeGraph("standard network");
 		cg.addNode("input", new Input());
 		cg.addNode("hidden1 weights", new MMult(new FMatrix(new float[][]{new float[]{0.15f, 0.20f}, new float[]{0.25f, 0.30f}})));
@@ -81,13 +62,78 @@ public class TestWorking
 		Matrix output=cg.getOutput(inputs).get("output sigmoid");
 		
 		outputVertices=new ArrayList<>();
-		outputVertices.add("euclideanCost");
+		outputVertices.add("cost function");
 		cg.setOutputVertices(outputVertices);
 		
 		Hashtable<String, Matrix>[] derivatives=cg.derive(inputs);
 		Hashtable<String, Matrix> objectiveDerivatives=derivatives[0];
 		Hashtable<String, Matrix> parameterDerivatives=derivatives[1];
 		int u=0;
+	}
+	
+	static void testMNIST() throws IOException
+	{
+		Object[] training=getImagesAndLabels("train");
+		float[][] trainImages=(float[][])training[0];
+		float[][] trainLabels=(float[][])training[1];
+		List<Hashtable<String, Matrix>> trainingInputsList=new ArrayList<>();
+		for(int inputInd=0; inputInd<trainImages.length; inputInd++)
+		{
+			Hashtable<String, Matrix> trainingInputs=new Hashtable<>();
+			trainingInputs.put("input", new FMatrix(new float[][]{trainImages[inputInd]}).otrans());
+			trainingInputs.put("training outputs", new FMatrix(new float[][]{trainLabels[inputInd]}).otrans());
+			trainingInputsList.add(trainingInputs);
+		}
+		
+		Object[] eval=getImagesAndLabels("t10k");
+		float[][] validationImages=(float[][])eval[0];
+		float[][] validationLabels=(float[][])eval[1];
+		List<Hashtable<String, Matrix>> validationInputsList=new ArrayList<>();	
+		for(int inputInd=0; inputInd<validationImages.length; inputInd++)
+		{
+			Hashtable<String, Matrix> validationInputs=new Hashtable<>();
+			validationInputs.put("input", new FMatrix(new float[][]{validationImages[inputInd]}).otrans());
+			validationInputs.put("training outputs", new FMatrix(new float[][]{validationLabels[inputInd]}).otrans());
+			validationInputsList.add(validationInputs);
+		}
+		
+		ComputeGraph cg=new ComputeGraph("standard network");
+		cg.addNode("input", new Input());
+		cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(100, 28*28, 28*28)));
+		cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(100, 1)));
+		cg.addNode("hidden1 sigmoid", new Sigmoid());
+		cg.addNode("output weights", new MMult(generateWeightMatrix(10, 100, 100)));
+		cg.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
+		cg.addNode("output sigmoid", new Sigmoid());
+		
+		
+		cg.addNode("training outputs", new Input());
+		cg.addNode("cost function", new Euclidean());
+		
+		cg.addEdge("input", "hidden1 weights");
+		cg.addEdge("hidden1 weights", "hidden1 biases");
+		cg.addEdge("hidden1 biases", "hidden1 sigmoid");
+		cg.addEdge("hidden1 sigmoid", "output weights");
+		cg.addEdge("output weights", "output biases");
+		cg.addEdge("output biases", "output sigmoid");
+		cg.addEdge("network output", "output sigmoid", "cost function");
+		cg.addEdge("train output", "training outputs", "cost function");
+		
+		/*
+		List<String> outputVertices=new ArrayList<>();
+		outputVertices.add("output sigmoid");
+		cg.setOutputVertices(outputVertices);
+		*/
+		
+		List<String> outputVertices=new ArrayList<>();
+		outputVertices.add("cost function");
+		cg.setOutputVertices(outputVertices);
+		
+		BackPropagation backprop=new BackPropagation(trainingInputsList, 
+				validationInputsList,
+				100, 50);
+		
+		backprop.optimize(cg, "cost function");
 	}
 	
 	static Matrix generateWeightMatrix(int rows, int cols, int inputSize)
@@ -107,7 +153,7 @@ public class TestWorking
 	static Matrix generateBiasMatrix(int rows, int cols)
 	{
 		Matrix weights=new FMatrix(rows, cols);
-		NormalDistribution nInvGaussian=new NormalDistribution(0.0, 0.0);
+		NormalDistribution nInvGaussian=new NormalDistribution(0.0, 1.0);
 		for(int rowIndex=0; rowIndex<weights.getRows(); rowIndex++)
 		{
 			for(int colIndex=0; colIndex<weights.getCols(); colIndex++)
@@ -117,5 +163,77 @@ public class TestWorking
 		}
 		return weights;
 	}
+	
+	static Object[] getImagesAndLabels(String fileName) throws IOException
+	{
+	    BufferedInputStream labels = new BufferedInputStream(new FileInputStream("/home/c/workspace2/mlGPU/data/MNIST_Numbers/"+fileName+"-labels.idx1-ubyte"));
+		BufferedInputStream images = new BufferedInputStream(new FileInputStream("/home/c/workspace2/mlGPU/data/MNIST_Numbers/"+fileName+"-images.idx3-ubyte"));
+	    
+		byte[] intBytes=new byte[4];
+		labels.read(intBytes);
+		int magicNumber = b8ToB10Int(intBytes);
+	    if (magicNumber != 2049) {
+	      System.err.println("Label file has wrong magic number: " + magicNumber + " (should be 2049)");
+	      System.exit(0);
+	    }
+	    images.read(intBytes);
+	    magicNumber = b8ToB10Int(intBytes);
+	    if (magicNumber != 2051) {
+	      System.err.println("Image file has wrong magic number: " + magicNumber + " (should be 2051)");
+	      System.exit(0);
+	    }
+	    labels.read(intBytes);
+	    int numLabels = b8ToB10Int(intBytes);
+	    images.read(intBytes);
+	    int numImages = b8ToB10Int(intBytes);
+	    images.read(intBytes);
+	    int numRows = b8ToB10Int(intBytes);
+	    images.read(intBytes);
+	    int numCols = b8ToB10Int(intBytes);
+	    if (numLabels != numImages) {
+	      System.err.println("Image file and label file do not contain the same number of entries.");
+	      System.err.println("  Label file contains: " + numLabels);
+	      System.err.println("  Image file contains: " + numImages);
+	      System.exit(0);
+	    }
+
+	    long start = System.currentTimeMillis();
+	    int numLabelsRead = 0;
+	    int numImagesRead = 0;
+	    float[][] imagesArray=new float[numImages][28*28];
+	    float[][] labelsArray=new float[numImages][10];
+	    byte[] labelsBytes=new byte[numImages];
+	    labels.read(labelsBytes);
+	    byte[] imageBytes=new byte[numImages*28*28];
+	    images.read(imageBytes);
+	    while (numLabelsRead < numLabels) 
+	    {
+	    	labelsArray[numLabelsRead][labelsBytes[numLabelsRead]]=1.0f;
+	    	numLabelsRead++;
+	      for (int colIdx = 0; colIdx < numCols; colIdx++) 
+	      {
+	        for (int rowIdx = 0; rowIdx < numRows; rowIdx++) 
+	        {
+	        	imagesArray[numImagesRead][28*colIdx+rowIdx]=(float)(Byte.toUnsignedInt(imageBytes[28*28*numImagesRead+28*colIdx+rowIdx]))/256;
+	        }
+	      }
+	      float[] image=imagesArray[0];
+	      numImagesRead++;
+	    }
+	    
+	    long end = System.currentTimeMillis();
+	    long elapsed = end - start;
+	    System.out.println("Read " + numLabelsRead + " samples in " + elapsed + " ms ");
+	    return new Object[]{imagesArray, labelsArray};
+		
+	}
+	
+	static int b8ToB10Int(byte[] b8)
+    {
+        return ((b8[0] & 0xFF) << 24) |
+         ((b8[1] & 0xFF) << 16) |
+         ((b8[2] & 0xFF) <<  8) |
+         (b8[3] & 0xFF);
+    }
 	
 }
