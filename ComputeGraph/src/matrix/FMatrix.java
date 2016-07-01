@@ -125,6 +125,7 @@ public class FMatrix extends Matrix
 		else
 		{
 			mat=new FloatMatrix(new float[rows][columns]);
+			omscal(0.0f);
 		}
 	}
 	
@@ -566,9 +567,8 @@ public class FMatrix extends Matrix
 		else
 		{
 			((FMatrix)result).mat.muli(scaleResultBy);
-			((FMatrix)result).mat.addi(((FMatrix)mat).mat
-					.mmul(((FMatrix)vecMult).mat.mul(scaleMultBy)));
-			((FMatrix)result).mat.addi(((FMatrix)vecAdd).mat);
+			((FMatrix)result).mat.addi((((FMatrix)mat).mat
+					.mmul(((FMatrix)vecMult).mat.mul(scaleMultBy))).addi(((FMatrix)vecAdd).mat));
 			return result;
 		}
 	}
@@ -583,7 +583,10 @@ public class FMatrix extends Matrix
 		}
 		else
 		{
-			
+			((FMatrix)result).mat.muli(scaleResultBy);
+			((FMatrix)result).mat.addi((((FMatrix)mat).mat
+					.mmul(((FMatrix)vecMult).mat.mul(scaleMultBy))).addi(((FMatrix)vecAdd).mat));
+			return result;
 		}
 	}
 	

@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Random;
 
-import function.DifferentialbleFunction;
+import function.DifferentiableFunction;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.CUcontext;
@@ -32,8 +32,9 @@ import jcuda.driver.CUmodule;
 import jcuda.driver.JCudaDriver;
 import matrix.FMatrix;
 import matrix.Matrix;
+import vertex.ComputeNode;
 
-public class Sigmoid extends DifferentialbleFunction
+public class Sigmoid extends DifferentiableFunction
 {
 	static
 	{
@@ -69,20 +70,19 @@ public class Sigmoid extends DifferentialbleFunction
 	*/
     
     @Override
-	public matrix.Matrix apply(Hashtable<String, matrix.Matrix> input) 
+	public Matrix[] apply(Matrix[] input) 
     {
-    	Matrix inputMatrix=input.get("in");
-    	Matrix output=new FMatrix(inputMatrix.getRows(), inputMatrix.getCols());
+    	Matrix output=new FMatrix(input[0].getRows(), input[0].getCols());
 
     	if(FMatrix.GPU)
 		{
 			//input=new FDMatrix(new float[1][10]);
-			((FMatrix)inputMatrix).sendToGPU();
+			((FMatrix)input[0]).sendToGPU();
 			
 			int maxThreads=1;
 	    	int maxBlocks=1;
-	    	int numBlocks = getNumBlocks(inputMatrix.getLen(), maxBlocks, maxThreads);
-	        int numThreads = getNumThreads(inputMatrix.getLen(), maxBlocks, maxThreads);
+	    	int numBlocks = getNumBlocks(input[0].getLen(), maxBlocks, maxThreads);
+	        int numThreads = getNumThreads(input[0].getLen(), maxBlocks, maxThreads);
 	        
 	        int sharedMemSize = numThreads * Sizeof.FLOAT;
 	        if (numThreads <= 32) 
@@ -91,8 +91,8 @@ public class Sigmoid extends DifferentialbleFunction
 	        }
 	        
 	        Pointer kernelParameters = Pointer.to(
-	            Pointer.to(((FMatrix)inputMatrix).gpuPointer),
-	            Pointer.to(new int[]{inputMatrix.getLen()})
+	            Pointer.to(((FMatrix)input[0]).gpuPointer),
+	            Pointer.to(new int[]{input[0].getLen()})
 	        );
 	
 	        // Call the kernel function.
@@ -104,31 +104,23 @@ public class Sigmoid extends DifferentialbleFunction
 	        );
 	        //cuCtxSynchronize();
 	            
-	        return inputMatrix;
+	        return input;
 		}
 		else
 		{
-			for(int inputInd=0; inputInd<inputMatrix.getRows(); inputInd++)
+			for(int inputInd=0; inputInd<input[0].getRows(); inputInd++)
 			{
-				output.set(inputInd, 0, (float)(1/(1+Math.exp(-inputMatrix.get(inputInd, 0)))));
+				output.set(inputInd, 0, (float)(1/(1+Math.exp(-input[0].get(inputInd, 0)))));
 			}
-			return output;
+			return new Matrix[]{output};
 		}
 	}
 
 	@Override
-	public Matrix[] differentiate(Hashtable<String, matrix.Matrix> input,
-			Hashtable<String, matrix.Matrix> dInput) 
+	public Matrix[][] differentiate(Matrix[] input, Matrix[] dInput) 
 	{
-		Matrix inputMatrix=input.get("in");
-		Matrix dInputMatrix=null;
-		for(String key: dInput.keySet())
-		{
-			dInputMatrix=dInput.get(key);
-		}
-		
-		Matrix derivative=new FMatrix(inputMatrix.getRows(), inputMatrix.getCols());
-		inputMatrix.copyTo(derivative);
+		Matrix derivative=new FMatrix(input[0].getRows(), input[0].getCols());
+		input[0].copyTo(derivative);
 
 		if(FMatrix.GPU)
 		{
@@ -159,7 +151,7 @@ public class Sigmoid extends DifferentialbleFunction
 	        );
 	        //cuCtxSynchronize();
 	            
-	        return new Matrix[]{derivative.oebemult(dInputMatrix), null};
+	        return new Matrix[][]{new Matrix[]{derivative.oebemult(dInput[0])}, null};
 		}
 		else
 		{
@@ -168,7 +160,7 @@ public class Sigmoid extends DifferentialbleFunction
 				derivative.set(inputInd, 0, (float) ((1/(1+Math.exp(-derivative.get(inputInd, 0))))
 						*(1.0f-(1/(1+Math.exp(-derivative.get(inputInd, 0)))))));
 			}
-			return new Matrix[]{derivative.oebemult(dInputMatrix), null};
+			return new Matrix[][]{new Matrix[]{derivative.oebemult(dInput[0])}, null};
 		}
 	}
 

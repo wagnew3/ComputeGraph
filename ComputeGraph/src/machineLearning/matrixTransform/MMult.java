@@ -17,20 +17,21 @@ public class MMult extends UpdatableDifferentiableFunction
 	}
 
 	@Override
-	public Matrix[] differentiate(Hashtable<String, Matrix> input, Hashtable<String, Matrix> dInput) 
+	public Matrix[][] differentiate(Matrix[] input, Matrix[] dInput) 
 	{
-		Matrix paramDiff=new FMatrix(input.get("in").getRows(), dInput.get("in").getRows());
-		dInput.get("in").outProd(dInput.get("in"), input.get("in"), paramDiff);
-		Matrix objectiveDiff=new FMatrix(input.get("in").getRows(), 1);
-		objectiveDiff=paramMatrix.sgemv(true, 1.0f, paramMatrix, 
-				dInput.get("in"), 1, 0.0f, objectiveDiff, 1, false, objectiveDiff);
-		return new Matrix[]{objectiveDiff, paramDiff};
+		Matrix paramDiff=new FMatrix(input[0].getRows(), dInput[0].getRows());
+		dInput[0].outProd(dInput[0], input[0], paramDiff);
+		Matrix objectiveDiff=new FMatrix(input[0].getRows(), 1);
+		objectiveDiff=((FMatrix)objectiveDiff).sgemv(true, 1.0f, paramMatrix, 
+				dInput[0], 1, 1.0f, objectiveDiff, 1, true, objectiveDiff);
+		
+		return new Matrix[][]{new Matrix[]{objectiveDiff}, new Matrix[]{paramDiff}};
 	}
 
 	@Override
-	public Matrix apply(Hashtable<String, Matrix> input) 
+	public Matrix[] apply(Matrix[] input) 
 	{
-		return paramMatrix.mmult(input.get("in"));
+		return new Matrix[]{paramMatrix.mmult(input[0])};
 	}
 
 	@Override

@@ -10,9 +10,9 @@ public class Input extends Function
 {
 
 	@Override
-	public Matrix apply(Hashtable<String, Matrix> input) 
+	public Matrix[] apply(Matrix[] input) 
 	{
-		return input.get("in");
+		return input;
 	}
 
 }

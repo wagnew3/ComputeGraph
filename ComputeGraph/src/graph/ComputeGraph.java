@@ -12,15 +12,15 @@ import org.graphstream.graph.implementations.AbstractGraph;
 import org.graphstream.graph.implementations.SingleGraph;
 import org.graphstream.graph.implementations.SingleNode;
 
-import function.DifferentialbleFunction;
+import function.DifferentiableFunction;
 import function.Function;
 import matrix.Matrix;
 import vertex.ComputeNode;
 
 public class ComputeGraph extends SingleGraph
 {
-	private Hashtable<String, String> outputVertices;
-	List<String> computeOrder;
+	private Hashtable<ComputeNode, ComputeNode> outputVertices;
+	List<ComputeNode> computeOrder;
 	
 	public ComputeGraph(String name)
 	{
@@ -35,168 +35,159 @@ public class ComputeGraph extends SingleGraph
 		});
 	}
 	
-	public void setOutputVertices(List<String> newOutputVertices)
+	public void setOutputVertices(List<ComputeNode> newOutputVertices)
 	{
 		computeOrder=null;
 		outputVertices=new Hashtable<>();
-		for(String outputName: newOutputVertices)
+		for(ComputeNode outputName: newOutputVertices)
 		{
 			outputVertices.put(outputName, outputName);
 		}
 	}
 	
-	public void addNode(String name, Function function)
+	public ComputeNode addNode(String name, Function function)
 	{
 		computeOrder=null;
 		ComputeNode newNode=addNode(name);
 		newNode.setFunction(function);
+		return newNode;
 	}
 	
-	@Override
-	public Edge addEdge(String id, String index1, String index2)
+	public Edge addEdge(ComputeNode c0, ComputeNode c1)
 	{
-		computeOrder=null;
-		Edge edge=super.addEdge(id+" "+index1+"_"+index2, index1, index2);
-		return edge;
+		if(!c0.hasEdgeBetween(c1))
+		{
+			computeOrder=null;
+			Edge edge=super.addEdge(c0.toString()+"_"+c1.toString(), c0, c1);
+			return edge;
+		}
+		return null;
 	}
 	
-	public Edge addEdge(String index1, String index2)
+	public Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> getOutput(Hashtable<ComputeNode, Matrix> inputs)
 	{
-		computeOrder=null;
-		Edge edge=super.addEdge("in "+index1+"_"+index2, index1, index2);
-		return edge;
-	}
-	
-	public Hashtable<String, Matrix> getOutput(Hashtable<String, Matrix> inputs)
-	{
-		Hashtable<String, Matrix> outputs=new Hashtable<>();
-		Hashtable<String, Matrix> allOutputs=compute(inputs);
-		for(String outputName: outputVertices.keySet())
+		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> outputs=new Hashtable<>();
+		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allOutputs=compute(inputs);
+		for(ComputeNode outputName: outputVertices.keySet())
 		{
 			outputs.put(outputName, allOutputs.get(outputName));
 		}
 		return outputs;
 	}
 	
-	public Hashtable<String, Matrix> compute(Hashtable<String, Matrix> inputs)
+	public Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> compute(Hashtable<ComputeNode, Matrix> inputs)
 	{
 		if(computeOrder==null)
 		{
 			computeOrder=determineComputeOrder();
 		}
 		
-		Hashtable<String, String> outputted=new Hashtable<>();
-		Hashtable<String, Matrix> intermediateOutputs=new Hashtable<>();
-		for(String inputName: inputs.keySet())
+		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allInputs=new Hashtable<>();
+		for(ComputeNode inputNode: inputs.keySet())
 		{
-			if(outputVertices.get(inputName)==null)
+			Hashtable inputNodeInput=new Hashtable<>();
+			inputNodeInput.put(inputNode, inputs.get(inputNode));
+			allInputs.put(inputNode, inputNodeInput);
+			/*
+			Hashtable<ComputeNode, Matrix> input=new Hashtable<>();
+			input.put(inputNode, inputs.get(inputNode));
+			Hashtable<ComputeNode, Matrix> nodeOutputs=inputNode.getOutput(input);
+			for(ComputeNode nodeOutputTo: nodeOutputs.keySet())
 			{
-				intermediateOutputs.put(inputName, inputs.get(inputName));
+				if(allInputs.get(nodeOutputTo)==null)
+				{
+					allInputs.put(nodeOutputTo, new Hashtable<ComputeNode, Matrix>());
+				}
+				allInputs.get(nodeOutputTo).put(inputNode, nodeOutputs.get(nodeOutputTo));
 			}
-			outputted.put(inputName, inputName);
+			*/
 		}
 		
-		for(String toCompute: computeOrder)
+		for(ComputeNode toCompute: computeOrder)
 		{
-			if(outputted.get(toCompute)==null)
+			Hashtable<ComputeNode, Matrix> nodeOutputs=toCompute.getOutput(allInputs.get(toCompute));
+			for(ComputeNode nodeOutputTo: nodeOutputs.keySet())
 			{
-				Hashtable<String, Matrix> nextNodeInput=new Hashtable<>();
-				ComputeNode nextComputeNode=getNode(toCompute);
-				for(Edge computedNodeEdge: nextComputeNode)
+				if(allInputs.get(nodeOutputTo)==null)
 				{
-					if(computedNodeEdge.getNode1().getId().equals(toCompute))
-					{
-						nextNodeInput.put(computedNodeEdge.getId().substring(0, computedNodeEdge.getId().indexOf(' ')),
-								intermediateOutputs.get(computedNodeEdge.getNode0().getId()));
-					}
+					allInputs.put(nodeOutputTo, new Hashtable<ComputeNode, Matrix>());
 				}
-				Matrix nextNodeOutput=nextComputeNode.getOutput(nextNodeInput);
-				intermediateOutputs.put(toCompute, nextNodeOutput);
-				outputted.put(toCompute, toCompute);
+				allInputs.get(nodeOutputTo).put(toCompute, nodeOutputs.get(nodeOutputTo));
 			}
 		}
-		return intermediateOutputs;
+		return allInputs;
 	}
 	
-	public Hashtable<String, Matrix>[] derive(Hashtable<String, Matrix> inputs)
+	public Hashtable<ComputeNode, Matrix> derive(Hashtable<ComputeNode, Matrix> inputs)
 	{
-		Hashtable<String, Matrix> allOutputs=compute(inputs);
+		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allInputs=compute(inputs);
 		
-		Hashtable<String, Matrix> objectiveDerivatives=new Hashtable<>();
-		Hashtable<String, Matrix> parameterDerivatives=new Hashtable<>();
+		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> objectiveDerivatives=new Hashtable<>();
+		Hashtable<ComputeNode, Matrix> parameterDerivatives=new Hashtable<>();
 		
 		for(int computeInd=computeOrder.size()-1; computeInd>=0; computeInd--)
 		{
-			String toCompute=computeOrder.get(computeInd);
-			Hashtable<String, Matrix> nextNodeInputs=new Hashtable<>();
+			ComputeNode nextComputeNode=computeOrder.get(computeInd);
 			Hashtable<String, Matrix> derivatives=new Hashtable<>();
-			ComputeNode nextComputeNode=getNode(toCompute);
-			if(nextComputeNode.getFunction() instanceof DifferentialbleFunction)
+			if(nextComputeNode.getFunction() instanceof DifferentiableFunction)
 			{
-				for(Edge computedNodeEdge: nextComputeNode)
+				Hashtable<ComputeNode, Matrix>[] nextNodeDerivatives
+					=nextComputeNode.differentiate(allInputs.get(nextComputeNode), objectiveDerivatives.get(nextComputeNode));
+				
+				for(ComputeNode prevNode: nextNodeDerivatives[0].keySet())
 				{
-					if(computedNodeEdge.getNode1().getId().equals(toCompute))
+					if(objectiveDerivatives.get(prevNode)==null)
 					{
-						nextNodeInputs.put(computedNodeEdge.getId().substring(0, computedNodeEdge.getId().indexOf(' ')),
-								allOutputs.get(computedNodeEdge.getNode0().getId()));
+						objectiveDerivatives.put(prevNode, new Hashtable<ComputeNode, Matrix>());
 					}
-					else
-					{
-						if(objectiveDerivatives.get(computedNodeEdge.getNode1().getId())!=null)
-						{
-							derivatives.put(computedNodeEdge.getId().substring(0, computedNodeEdge.getId().indexOf(' ')),
-									objectiveDerivatives.get(computedNodeEdge.getNode1().getId()));
-						}
-					}
+					objectiveDerivatives.get(prevNode).put(nextComputeNode, nextNodeDerivatives[0].get(prevNode));
 				}
-				Matrix[] nextNodeDerivatives=((DifferentialbleFunction)nextComputeNode.getFunction())
-						.differentiate(nextNodeInputs, derivatives);
-				objectiveDerivatives.put(nextComputeNode.getId(), nextNodeDerivatives[0]);
 				if(nextNodeDerivatives[1]!=null)
 				{
-					parameterDerivatives.put(nextComputeNode.getId(), nextNodeDerivatives[1]);
+					for(ComputeNode paramComputeNode: nextNodeDerivatives[1].keySet())
+					{
+						parameterDerivatives.put(paramComputeNode, nextNodeDerivatives[1].get(paramComputeNode));
+					}
 				}
 			}
 		}
-		return new Hashtable[]{objectiveDerivatives, parameterDerivatives};
+		return parameterDerivatives;
 	}
 	
-	private List<String> determineComputeOrder()
+	private List<ComputeNode> determineComputeOrder()
 	{
-		Hashtable<String, String> addedNode=new Hashtable<>();
-		List<String> newComputeOrder=new ArrayList<>();
-		List<String> nodesToComputeFrom=new ArrayList<>();
+		Hashtable<ComputeNode, ComputeNode> addedNode=new Hashtable<>();
+		List<ComputeNode> newComputeOrder=new ArrayList<>();
+		List<ComputeNode> nodesToComputeFrom=new ArrayList<>();
 		
-		for(String node: outputVertices.keySet())
+		for(ComputeNode outputNode: outputVertices.keySet())
 		{
-			ComputeNode outputNode=getNode(node);
 			boolean terminal=true;
 			for(Edge edge: outputNode.getEdgeSet())
 			{
-				if(!edge.getNode1().getId().equals(node)
+				if(!edge.getNode1().getId().equals(outputNode)
 						&& outputVertices.get(edge.getNode1().getId())!=null)
 				{
 					terminal=false;
 				}
 			}
-			newComputeOrder.add(node);
-			nodesToComputeFrom.add(node);
-			addedNode.put(node, node);
+			newComputeOrder.add(outputNode);
+			nodesToComputeFrom.add(outputNode);
+			addedNode.put(outputNode, outputNode);
 		}
 		
 		while(!nodesToComputeFrom.isEmpty())
 		{
-			String computeFromNodeID=nodesToComputeFrom.remove(0);
-			ComputeNode computeNode=getNode(computeFromNodeID);
+			ComputeNode computeNode=nodesToComputeFrom.remove(0);
 			boolean terminal=true;
 			for(Edge edge: computeNode.getEdgeSet())
 			{
-				if(edge.getNode1().getId().equals(computeNode.getId())
-						&& addedNode.get(edge.getNode0().getId())==null)
+				if(edge.getNode1().equals(computeNode)
+						&& addedNode.get(edge.getNode0())==null)
 				{
-					newComputeOrder.add(edge.getNode0().getId());
-					nodesToComputeFrom.add(edge.getNode0().getId());
-					addedNode.put(edge.getNode0().getId(), edge.getNode0().getId());
+					newComputeOrder.add(edge.getNode0());
+					nodesToComputeFrom.add(edge.getNode0());
+					addedNode.put(edge.getNode0(), edge.getNode0());
 				}
 			}
 		}

@@ -28,17 +28,17 @@ public class MAdd extends UpdatableDifferentiableFunction
 	}
 
 	@Override
-	public Matrix[] differentiate(Hashtable<String, Matrix> input, Hashtable<String, Matrix> dInput) 
+	public Matrix[][] differentiate(Matrix[] input, Matrix[] dInput) 
 	{
-		Matrix derivative=dInput.get("in");
-		return new Matrix[]{derivative, derivative};
+		Matrix derivative=dInput[0];
+		return new Matrix[][]{new Matrix[]{derivative}, new Matrix[]{derivative}};
 	}
 
 	@Override
-	public Matrix apply(Hashtable<String, Matrix> input) 
+	public Matrix[] apply(Matrix[] input) 
 	{
-		Matrix inputMatrix=input.get("in");
-		return inputMatrix.mad(add);
+		Matrix inputMatrix=input[0];
+		return new Matrix[]{inputMatrix.mad(add)};
 	}
 
 }

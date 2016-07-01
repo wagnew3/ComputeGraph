@@ -107,5 +107,11 @@ public abstract class Matrix implements Serializable
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	public Matrix omatVecMultScaleAdd(boolean transPose, Matrix mat, Matrix vecMult, float scaleMultBy, Matrix vecAdd,
+			Matrix result, float scaleResultBy) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

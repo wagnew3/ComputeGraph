@@ -8,16 +8,23 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import graph.ComputeGraph;
 import machineLearning.Learner.BackPropagation;
+import machineLearning.Learner.RProp;
 import machineLearning.activationFunction.Sigmoid;
+import machineLearning.activationFunction.TanH;
 import machineLearning.costFunction.Euclidean;
 import machineLearning.generalFunctions.Input;
+import machineLearning.matrixTransform.Combine;
 import machineLearning.matrixTransform.MAdd;
 import machineLearning.matrixTransform.MMult;
+import machineLearning.matrixTransform.Split;
 import matrix.FMatrix;
 import matrix.Matrix;
+import vertex.ComputeNode;
 
 public class TestWorking 
 {
@@ -25,7 +32,8 @@ public class TestWorking
 	public static void main(String[] args) throws IOException
 	{
 		//testNetworkOutput();
-		testMNIST();
+		//testMNIST();
+		testMNISTSplit();
 	}
 	
 	static void testNetworkOutput()
@@ -73,73 +81,152 @@ public class TestWorking
 	
 	static void testMNIST() throws IOException
 	{
+		ComputeGraph cg=new ComputeGraph("standard network");
+		ComputeNode input=cg.addNode("input", new Input());
+		ComputeNode weights1=cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(100, 28*28, 28*28)));
+		ComputeNode biases1=cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(100, 1)));
+		ComputeNode sigmoid1=cg.addNode("hidden1 sigmoid", new TanH());
+		ComputeNode outWeights=cg.addNode("output weights", new MMult(generateWeightMatrix(10, 100, 100)));
+		ComputeNode outBiases=cg.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
+		ComputeNode outSigmoid=cg.addNode("output sigmoid", new TanH());
+		ComputeNode trainingOutputs=cg.addNode("training outputs", new Input());
+		ComputeNode cost=cg.addNode("cost function", new Euclidean());
+		
+		input.setInputOutputNode(new ComputeNode[]{input}, new ComputeNode[]{weights1});
+		weights1.setInputOutputNode(new ComputeNode[]{input}, new ComputeNode[]{biases1});
+		biases1.setInputOutputNode(new ComputeNode[]{weights1}, new ComputeNode[]{sigmoid1});
+		sigmoid1.setInputOutputNode(new ComputeNode[]{biases1}, new ComputeNode[]{outWeights});
+		outWeights.setInputOutputNode(new ComputeNode[]{sigmoid1}, new ComputeNode[]{outBiases});
+		outBiases.setInputOutputNode(new ComputeNode[]{outWeights}, new ComputeNode[]{outSigmoid});
+		outSigmoid.setInputOutputNode(new ComputeNode[]{outBiases}, new ComputeNode[]{cost});		
+		cost.setInputOutputNode(new ComputeNode[]{outSigmoid, trainingOutputs}, new ComputeNode[]{cost});
+		
+		trainingOutputs.setInputOutputNode(new ComputeNode[]{trainingOutputs}, new ComputeNode[]{cost});
+		
 		Object[] training=getImagesAndLabels("train");
 		float[][] trainImages=(float[][])training[0];
 		float[][] trainLabels=(float[][])training[1];
-		List<Hashtable<String, Matrix>> trainingInputsList=new ArrayList<>();
+		List<Hashtable<ComputeNode, Matrix>> trainingInputsList=new ArrayList<>();
 		for(int inputInd=0; inputInd<trainImages.length; inputInd++)
 		{
-			Hashtable<String, Matrix> trainingInputs=new Hashtable<>();
-			trainingInputs.put("input", new FMatrix(new float[][]{trainImages[inputInd]}).otrans());
-			trainingInputs.put("training outputs", new FMatrix(new float[][]{trainLabels[inputInd]}).otrans());
+			Hashtable<ComputeNode, Matrix> trainingInputs=new Hashtable<>();
+			trainingInputs.put(input, new FMatrix(new float[][]{trainImages[inputInd]}).otrans());
+			trainingInputs.put(trainingOutputs, new FMatrix(new float[][]{trainLabels[inputInd]}).otrans());
 			trainingInputsList.add(trainingInputs);
 		}
-		
 		Object[] eval=getImagesAndLabels("t10k");
 		float[][] validationImages=(float[][])eval[0];
 		float[][] validationLabels=(float[][])eval[1];
-		List<Hashtable<String, Matrix>> validationInputsList=new ArrayList<>();	
+		List<Hashtable<ComputeNode, Matrix>> validationInputsList=new ArrayList<>();	
 		for(int inputInd=0; inputInd<validationImages.length; inputInd++)
 		{
-			Hashtable<String, Matrix> validationInputs=new Hashtable<>();
-			validationInputs.put("input", new FMatrix(new float[][]{validationImages[inputInd]}).otrans());
-			validationInputs.put("training outputs", new FMatrix(new float[][]{validationLabels[inputInd]}).otrans());
+			Hashtable<ComputeNode, Matrix> validationInputs=new Hashtable<>();
+			validationInputs.put(input, new FMatrix(new float[][]{validationImages[inputInd]}).otrans());
+			validationInputs.put(trainingOutputs, new FMatrix(new float[][]{validationLabels[inputInd]}).otrans());
 			validationInputsList.add(validationInputs);
 		}
 		
-		ComputeGraph cg=new ComputeGraph("standard network");
-		cg.addNode("input", new Input());
-		cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(100, 28*28, 28*28)));
-		cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(100, 1)));
-		cg.addNode("hidden1 sigmoid", new Sigmoid());
-		cg.addNode("output weights", new MMult(generateWeightMatrix(10, 100, 100)));
-		cg.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
-		cg.addNode("output sigmoid", new Sigmoid());
-		
-		
-		cg.addNode("training outputs", new Input());
-		cg.addNode("cost function", new Euclidean());
-		
-		cg.addEdge("input", "hidden1 weights");
-		cg.addEdge("hidden1 weights", "hidden1 biases");
-		cg.addEdge("hidden1 biases", "hidden1 sigmoid");
-		cg.addEdge("hidden1 sigmoid", "output weights");
-		cg.addEdge("output weights", "output biases");
-		cg.addEdge("output biases", "output sigmoid");
-		cg.addEdge("network output", "output sigmoid", "cost function");
-		cg.addEdge("train output", "training outputs", "cost function");
-		
-		/*
-		List<String> outputVertices=new ArrayList<>();
-		outputVertices.add("output sigmoid");
+		List<ComputeNode> outputVertices=new ArrayList<>();
+		outputVertices.add(cost);
 		cg.setOutputVertices(outputVertices);
-		*/
-		
-		List<String> outputVertices=new ArrayList<>();
-		outputVertices.add("cost function");
-		cg.setOutputVertices(outputVertices);
-		
-		BackPropagation backprop=new BackPropagation(trainingInputsList, 
+
+		BackPropagation bProp=new BackPropagation(trainingInputsList, 
 				validationInputsList,
-				100, 50);
+				100, 50, 0.1f);
 		
-		backprop.optimize(cg, "cost function");
+		bProp.optimize(cg, cost);
+	}
+	
+	static void testMNISTSplit() throws IOException
+	{
+		ComputeGraph cg=new ComputeGraph("standard network");
+		ComputeNode input=cg.addNode("input", new Input());
+		ComputeNode weights1=cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(100, 28*28, 28*28)));
+		ComputeNode biases1=cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(100, 1)));
+		ComputeNode sigmoid1=cg.addNode("hidden1 sigmoid", new TanH());
+		
+		ComputeNode split=cg.addNode("split", new Split(50, 0));
+		
+		ComputeNode weights2a=cg.addNode("hidden2a weights", new MMult(generateWeightMatrix(20, 50, 50)));
+		ComputeNode biases2a=cg.addNode("hidden2a biases", new MAdd(generateBiasMatrix(20, 1)));
+		ComputeNode sigmoid2a=cg.addNode("hidden2a sigmoid", new TanH());
+		
+		ComputeNode weights2b=cg.addNode("hidden2b weights", new MMult(generateWeightMatrix(20, 50, 50)));
+		ComputeNode biases2b=cg.addNode("hidden2b biases", new MAdd(generateBiasMatrix(20, 1)));
+		ComputeNode sigmoid2b=cg.addNode("hidden2b sigmoid", new TanH());
+		
+		ComputeNode combine=cg.addNode("combine", new Combine(20, 0));
+		
+		ComputeNode outWeights=cg.addNode("output weights", new MMult(generateWeightMatrix(10, 40, 40)));
+		ComputeNode outBiases=cg.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
+		ComputeNode outSigmoid=cg.addNode("output sigmoid", new TanH());
+		ComputeNode trainingOutputs=cg.addNode("training outputs", new Input());
+		ComputeNode cost=cg.addNode("cost function", new Euclidean());
+		
+		input.setInputOutputNode(new ComputeNode[]{input}, new ComputeNode[]{weights1});
+		weights1.setInputOutputNode(new ComputeNode[]{input}, new ComputeNode[]{biases1});
+		biases1.setInputOutputNode(new ComputeNode[]{weights1}, new ComputeNode[]{sigmoid1});
+		sigmoid1.setInputOutputNode(new ComputeNode[]{biases1}, new ComputeNode[]{split});
+		
+		split.setInputOutputNode(new ComputeNode[]{sigmoid1}, new ComputeNode[]{weights2a, weights2b});
+		
+		weights2a.setInputOutputNode(new ComputeNode[]{split}, new ComputeNode[]{biases2a});
+		biases2a.setInputOutputNode(new ComputeNode[]{weights2a}, new ComputeNode[]{sigmoid2a});
+		sigmoid2a.setInputOutputNode(new ComputeNode[]{biases2a}, new ComputeNode[]{combine});
+		
+		weights2b.setInputOutputNode(new ComputeNode[]{split}, new ComputeNode[]{biases2b});
+		biases2b.setInputOutputNode(new ComputeNode[]{weights2b}, new ComputeNode[]{sigmoid2b});
+		sigmoid2b.setInputOutputNode(new ComputeNode[]{biases2b}, new ComputeNode[]{combine});
+		
+		combine.setInputOutputNode(new ComputeNode[]{sigmoid2a, sigmoid2b}, new ComputeNode[]{outWeights});
+		
+		outWeights.setInputOutputNode(new ComputeNode[]{combine}, new ComputeNode[]{outBiases});
+		outBiases.setInputOutputNode(new ComputeNode[]{outWeights}, new ComputeNode[]{outSigmoid});
+		outSigmoid.setInputOutputNode(new ComputeNode[]{outBiases}, new ComputeNode[]{cost});		
+		cost.setInputOutputNode(new ComputeNode[]{outSigmoid, trainingOutputs}, new ComputeNode[]{cost});
+		
+		trainingOutputs.setInputOutputNode(new ComputeNode[]{trainingOutputs}, new ComputeNode[]{cost});
+		
+		Object[] training=getImagesAndLabels("train");
+		float[][] trainImages=(float[][])training[0];
+		float[][] trainLabels=(float[][])training[1];
+		List<Hashtable<ComputeNode, Matrix>> trainingInputsList=new ArrayList<>();
+		for(int inputInd=0; inputInd<trainImages.length; inputInd++)
+		{
+			Hashtable<ComputeNode, Matrix> trainingInputs=new Hashtable<>();
+			trainingInputs.put(input, new FMatrix(new float[][]{trainImages[inputInd]}).otrans());
+			trainingInputs.put(trainingOutputs, new FMatrix(new float[][]{trainLabels[inputInd]}).otrans());
+			trainingInputsList.add(trainingInputs);
+		}
+		Object[] eval=getImagesAndLabels("t10k");
+		float[][] validationImages=(float[][])eval[0];
+		float[][] validationLabels=(float[][])eval[1];
+		List<Hashtable<ComputeNode, Matrix>> validationInputsList=new ArrayList<>();	
+		for(int inputInd=0; inputInd<validationImages.length; inputInd++)
+		{
+			Hashtable<ComputeNode, Matrix> validationInputs=new Hashtable<>();
+			validationInputs.put(input, new FMatrix(new float[][]{validationImages[inputInd]}).otrans());
+			validationInputs.put(trainingOutputs, new FMatrix(new float[][]{validationLabels[inputInd]}).otrans());
+			validationInputsList.add(validationInputs);
+		}
+		
+		List<ComputeNode> outputVertices=new ArrayList<>();
+		outputVertices.add(cost);
+		cg.setOutputVertices(outputVertices);
+
+		BackPropagation bProp=new BackPropagation(trainingInputsList, 
+				validationInputsList,
+				100, 50, 0.1f);
+		
+		bProp.optimize(cg, cost);
 	}
 	
 	static Matrix generateWeightMatrix(int rows, int cols, int inputSize)
 	{
 		Matrix weights=new FMatrix(rows, cols);
-		NormalDistribution nInvGaussian=new NormalDistribution(0.0, 1.0/Math.sqrt(inputSize));
+		RandomGenerator random=new JDKRandomGenerator();
+		random.setSeed(521);
+		NormalDistribution nInvGaussian=new NormalDistribution(random, 0.0, 1.0/Math.sqrt(inputSize));
 		for(int rowIndex=0; rowIndex<weights.getRows(); rowIndex++)
 		{
 			for(int colIndex=0; colIndex<weights.getCols(); colIndex++)
@@ -153,7 +240,9 @@ public class TestWorking
 	static Matrix generateBiasMatrix(int rows, int cols)
 	{
 		Matrix weights=new FMatrix(rows, cols);
-		NormalDistribution nInvGaussian=new NormalDistribution(0.0, 1.0);
+		RandomGenerator random=new JDKRandomGenerator();
+		random.setSeed(521);
+		NormalDistribution nInvGaussian=new NormalDistribution(random, 0.0, 1.0);
 		for(int rowIndex=0; rowIndex<weights.getRows(); rowIndex++)
 		{
 			for(int colIndex=0; colIndex<weights.getCols(); colIndex++)
