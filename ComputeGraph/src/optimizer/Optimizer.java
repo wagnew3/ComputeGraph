@@ -6,6 +6,6 @@ import vertex.ComputeNode;
 public abstract class Optimizer 
 {
 	
-	public abstract void optimize(ComputeGraph cg, ComputeNode objective);
+	public abstract void optimize(ComputeGraph cg, ComputeNode[] objective);
 
 }

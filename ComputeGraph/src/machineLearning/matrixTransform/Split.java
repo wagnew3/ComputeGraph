@@ -34,7 +34,7 @@ public class Split extends DifferentiableFunction
 			{
 				for(int unsplitColInd=0; unsplitColInd<dInput[1].getCols(); unsplitColInd++)
 				{
-					dUnsplit.set(unsplitRowInd, unsplitColInd, dInput[0].get(unsplitRowInd-dInput[0].getRows(), unsplitColInd));
+					dUnsplit.set(unsplitRowInd, unsplitColInd, dInput[1].get(unsplitRowInd-dInput[0].getRows(), unsplitColInd));
 				}
 			}
 		}
@@ -52,7 +52,7 @@ public class Split extends DifferentiableFunction
 			{
 				for(int unsplitColInd=dInput[0].getCols(); unsplitColInd<dInput[0].getCols()+dInput[1].getCols(); unsplitColInd++)
 				{
-					dUnsplit.set(unsplitRowInd, unsplitColInd, dInput[0].get(unsplitRowInd, unsplitColInd-dInput[0].getCols()));
+					dUnsplit.set(unsplitRowInd, unsplitColInd, dInput[1].get(unsplitRowInd, unsplitColInd-dInput[0].getCols()));
 				}
 			}
 		}
@@ -67,7 +67,7 @@ public class Split extends DifferentiableFunction
 		if(splitDimension==0)
 		{
 			split0=new FMatrix(splitIndex, input[0].getCols());
-			split1=new FMatrix(input[0].getRows()-splitIndex, input[0].getCols());
+			split1=new FMatrix(input[1].getRows()-splitIndex, input[1].getCols());
 			for(int unsplitRowInd=0; unsplitRowInd<split0.getRows(); unsplitRowInd++)
 			{
 				for(int unsplitColInd=0; unsplitColInd<split0.getCols(); unsplitColInd++)
@@ -79,14 +79,14 @@ public class Split extends DifferentiableFunction
 			{
 				for(int unsplitColInd=0; unsplitColInd<split1.getCols(); unsplitColInd++)
 				{
-					split1.set(unsplitRowInd, unsplitColInd, input[0].get(unsplitRowInd+splitIndex, unsplitColInd));
+					split1.set(unsplitRowInd, unsplitColInd, input[1].get(unsplitRowInd+splitIndex, unsplitColInd));
 				}
 			}
 		}
 		else if(splitDimension==1)
 		{
 			split0=new FMatrix(input[0].getRows(), splitIndex);
-			split1=new FMatrix(input[0].getRows(), input[0].getCols()-splitIndex);
+			split1=new FMatrix(input[1].getRows(), input[1].getCols()-splitIndex);
 			for(int unsplitRowInd=0; unsplitRowInd<split0.getRows(); unsplitRowInd++)
 			{
 				for(int unsplitColInd=0; unsplitColInd<split0.getCols(); unsplitColInd++)
@@ -98,7 +98,7 @@ public class Split extends DifferentiableFunction
 			{
 				for(int unsplitColInd=0; unsplitColInd<split1.getCols(); unsplitColInd++)
 				{
-					split1.set(unsplitRowInd, unsplitColInd, input[0].get(unsplitRowInd, unsplitColInd+splitIndex));
+					split1.set(unsplitRowInd, unsplitColInd, input[1].get(unsplitRowInd, unsplitColInd+splitIndex));
 				}
 			}
 		}

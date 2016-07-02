@@ -28,9 +28,16 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 		this.numberEpochs=numberEpochs;
 		this.batchSize=batchSize;
 	}
+	
+	public void setExamples(List<Hashtable<ComputeNode, Matrix>> examples, 
+			List<Hashtable<ComputeNode, Matrix>> validationExamples)
+	{
+		this.examples=examples;
+		this.validationExamples=validationExamples;
+	}
 
 	@Override
-	public void optimize(ComputeGraph cg, ComputeNode objective) 
+	public void optimize(ComputeGraph cg, ComputeNode[] objectives) 
 	{
 		List<Hashtable<ComputeNode, Matrix>> randomizedExamples=new ArrayList<>();
 		randomizedExamples.addAll(examples);
@@ -51,16 +58,13 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 				for(int batchInd=0; batchInd<Math.min(batchSize, randomizedExamples.size()-sampleInd); batchInd++)
 				{
 					Hashtable<ComputeNode, Matrix> parameterDerivatives=cg.derive(batchExamples[batchInd]);
-					if(batchInd==0)
+					for(ComputeNode nodeDeriv: parameterDerivatives.keySet())
 					{
-						for(ComputeNode nodeDeriv: parameterDerivatives.keySet())
+						if(batchParameterDerivatives.get(nodeDeriv)==null)
 						{
 							batchParameterDerivatives.put(nodeDeriv, parameterDerivatives.get(nodeDeriv));
 						}
-					}
-					else
-					{
-						for(ComputeNode nodeDeriv: parameterDerivatives.keySet())
+						else
 						{
 							batchParameterDerivatives.get(nodeDeriv).omad(parameterDerivatives.get(nodeDeriv));
 						}
@@ -68,7 +72,7 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 				}
 				updateParameters(cg, batchParameterDerivatives);
 			}
-			float validationError=validate(cg, validationExamples, objective);
+			float validationError=validate(cg, validationExamples, objectives);
 			System.out.println("Epoch: "+epoch+" Average Validation Error: "+validationError);
 		}
 	}
@@ -87,6 +91,6 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 			Hashtable<ComputeNode, Matrix> batchDerivatives);
 	
 	public abstract float validate(ComputeGraph cg, 
-			List<Hashtable<ComputeNode, Matrix>> validationExamples, ComputeNode objective);
+			List<Hashtable<ComputeNode, Matrix>> validationExamples, ComputeNode[] objectives);
 
 }

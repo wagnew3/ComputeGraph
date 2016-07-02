@@ -64,13 +64,20 @@ public class ComputeGraph extends SingleGraph
 		return null;
 	}
 	
-	public Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> getOutput(Hashtable<ComputeNode, Matrix> inputs)
+	public Hashtable<ComputeNode, Matrix> getOutput(Hashtable<ComputeNode, Matrix> inputs)
 	{
-		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> outputs=new Hashtable<>();
+		Hashtable<ComputeNode, Matrix> outputs=new Hashtable<>();
 		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allOutputs=compute(inputs);
-		for(ComputeNode outputName: outputVertices.keySet())
+		for(ComputeNode outputNode: outputVertices.keySet())
 		{
-			outputs.put(outputName, allOutputs.get(outputName));
+			for(Edge outputNodeEdge: outputNode.getEdgeSet())
+			{
+				if(!outputNodeEdge.getTargetNode().equals(outputNode))
+				{
+					outputs.put(outputNode, allOutputs.get(outputNodeEdge.getTargetNode()).get(outputNode));
+					break;
+				}
+			}
 		}
 		return outputs;
 	}
@@ -105,14 +112,22 @@ public class ComputeGraph extends SingleGraph
 		
 		for(ComputeNode toCompute: computeOrder)
 		{
-			Hashtable<ComputeNode, Matrix> nodeOutputs=toCompute.getOutput(allInputs.get(toCompute));
-			for(ComputeNode nodeOutputTo: nodeOutputs.keySet())
+			if(toCompute.getId().equals("input0"))
 			{
-				if(allInputs.get(nodeOutputTo)==null)
+				int u=0;
+			}
+			if((allInputs.get(toCompute)!=null && allInputs.get(toCompute).size()==toCompute.inputNodes.length) 
+					|| toCompute.inputNodes.length==0)
+			{
+				Hashtable<ComputeNode, Matrix> nodeOutputs=toCompute.getOutput(allInputs.get(toCompute));
+				for(ComputeNode nodeOutputTo: nodeOutputs.keySet())
 				{
-					allInputs.put(nodeOutputTo, new Hashtable<ComputeNode, Matrix>());
+					if(allInputs.get(nodeOutputTo)==null)
+					{
+						allInputs.put(nodeOutputTo, new Hashtable<ComputeNode, Matrix>());
+					}
+					allInputs.get(nodeOutputTo).put(toCompute, nodeOutputs.get(nodeOutputTo));
 				}
-				allInputs.get(nodeOutputTo).put(toCompute, nodeOutputs.get(nodeOutputTo));
 			}
 		}
 		return allInputs;
@@ -128,8 +143,11 @@ public class ComputeGraph extends SingleGraph
 		for(int computeInd=computeOrder.size()-1; computeInd>=0; computeInd--)
 		{
 			ComputeNode nextComputeNode=computeOrder.get(computeInd);
-			Hashtable<String, Matrix> derivatives=new Hashtable<>();
-			if(nextComputeNode.getFunction() instanceof DifferentiableFunction)
+			if(nextComputeNode.getFunction() instanceof DifferentiableFunction
+					&& (allInputs.get(nextComputeNode)!=null || nextComputeNode.inputNodes.length==0) 
+					&& (objectiveDerivatives.get(nextComputeNode)!=null
+					|| nextComputeNode.outputNodes.length==1 &&
+					nextComputeNode.outputNodes[0].equals(nextComputeNode)))
 			{
 				Hashtable<ComputeNode, Matrix>[] nextNodeDerivatives
 					=nextComputeNode.differentiate(allInputs.get(nextComputeNode), objectiveDerivatives.get(nextComputeNode));
@@ -158,41 +176,44 @@ public class ComputeGraph extends SingleGraph
 	{
 		Hashtable<ComputeNode, ComputeNode> addedNode=new Hashtable<>();
 		List<ComputeNode> newComputeOrder=new ArrayList<>();
-		List<ComputeNode> nodesToComputeFrom=new ArrayList<>();
+		Hashtable<ComputeNode, ComputeNode> nodesToComputeTo=new Hashtable<>();
+		List<ComputeNode> remainingNodes=new ArrayList<>(getNodeSet());
 		
 		for(ComputeNode outputNode: outputVertices.keySet())
 		{
-			boolean terminal=true;
-			for(Edge edge: outputNode.getEdgeSet())
-			{
-				if(!edge.getNode1().getId().equals(outputNode)
-						&& outputVertices.get(edge.getNode1().getId())!=null)
-				{
-					terminal=false;
-				}
-			}
-			newComputeOrder.add(outputNode);
-			nodesToComputeFrom.add(outputNode);
+			nodesToComputeTo.put(outputNode, outputNode);
 			addedNode.put(outputNode, outputNode);
 		}
 		
-		while(!nodesToComputeFrom.isEmpty())
+		while(!nodesToComputeTo.isEmpty())
 		{
-			ComputeNode computeNode=nodesToComputeFrom.remove(0);
-			boolean terminal=true;
-			for(Edge edge: computeNode.getEdgeSet())
+			ComputeNode computeNode=remainingNodes.remove(0);
+			
+			boolean allinputsComputed=true;
+			for(ComputeNode inputNode: computeNode.inputNodes)
 			{
-				if(edge.getNode1().equals(computeNode)
-						&& addedNode.get(edge.getNode0())==null)
+				if(addedNode.get(inputNode)==null
+						&& !inputNode.equals(computeNode))
 				{
-					newComputeOrder.add(edge.getNode0());
-					nodesToComputeFrom.add(edge.getNode0());
-					addedNode.put(edge.getNode0(), edge.getNode0());
+					allinputsComputed=false;
 				}
 			}
+			
+			if(allinputsComputed)
+			{
+				newComputeOrder.add(computeNode);
+				addedNode.put(computeNode, computeNode);
+				if(nodesToComputeTo.get(computeNode)!=null)
+				{
+					nodesToComputeTo.remove(computeNode);
+				}
+			}
+			else
+			{
+				remainingNodes.add(computeNode);
+			}
 		}
-		
-		Collections.reverse(newComputeOrder);
+
 		return newComputeOrder;
 	}
 

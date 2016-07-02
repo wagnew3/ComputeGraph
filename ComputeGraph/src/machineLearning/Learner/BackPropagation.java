@@ -41,47 +41,54 @@ public class BackPropagation extends ExampleBatchDerivativeOptimizer
 
 	@Override
 	public float validate(ComputeGraph cg, List<Hashtable<ComputeNode, Matrix>> validationExamples,
-			ComputeNode objective) 
+			ComputeNode[] objectives) 
 	{
 		float totalError=0.0f;
 		
 		
 		int numberCorrect=0;
-		
-		for(Hashtable<ComputeNode, Matrix> validationExample: validationExamples)
+		long numberErrors=0;
+		for(int objectiveInd=0; objectiveInd<objectives.length; objectiveInd++)
 		{
-			Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=cg.compute(validationExample);
-			totalError+=output.get(objective).get(objective).get(0, 0);
-			
-			float max=-1;
-			int maxInd=-1;
-			for(int outInd=0; outInd<output.get(objective).get(objective.inputNodes[0]).getLen(); outInd++)
+			for(Hashtable<ComputeNode, Matrix> validationExample: validationExamples)
 			{
-				if(max<output.get(objective).get(objective.inputNodes[0]).get(outInd, 0))
+				Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=cg.compute(validationExample);
+				if(output.get(objectives[objectiveInd])!=null)
 				{
-					max=output.get(objective).get(objective.inputNodes[0]).get(outInd, 0);
-					maxInd=outInd;
+					totalError+=output.get(objectives[objectiveInd]).get(objectives[objectiveInd]).get(0, 0);
+					numberErrors++;
 				}
-			}
-			int correctInd=-2;
-			for(int outInd=0; outInd<validationExample.get(objective.inputNodes[1]).getLen(); outInd++)
-			{
-				if(validationExample.get(objective.inputNodes[1]).get(outInd, 0)==1.0f)
+				/*
+				float max=-1;
+				int maxInd=-1;
+				for(int outInd=0; outInd<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).getLen(); outInd++)
 				{
-					correctInd=outInd;
-					break;
+					if(max<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0))
+					{
+						max=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0);
+						maxInd=outInd;
+					}
 				}
+				int correctInd=-2;
+				for(int outInd=0; outInd<validationExample.get(objectives[objectiveInd].inputNodes[1]).getLen(); outInd++)
+				{
+					if(validationExample.get(objectives[objectiveInd].inputNodes[1]).get(outInd, 0)==1.0f)
+					{
+						correctInd=outInd;
+						break;
+					}
+				}
+				if(maxInd!=correctInd)
+				{
+					numberCorrect++;
+				}
+				*/
 			}
-			if(maxInd!=correctInd)
-			{
-				numberCorrect++;
-			}
-		
 		}
 		
 		System.out.println("Number classified incorrectly: "+numberCorrect);
 		
-		totalError/=validationExamples.size();
+		totalError/=numberErrors;
 		return totalError;
 	}
 

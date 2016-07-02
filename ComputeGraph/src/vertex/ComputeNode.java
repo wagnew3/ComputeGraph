@@ -20,6 +20,8 @@ public class ComputeNode extends SingleNode
 	public ComputeNode(AbstractGraph graph, String id)
 	{
 		super(graph, id);
+		inputNodes=new ComputeNode[0];
+		outputNodes=new ComputeNode[0];
 	}
 	
 	public void setInputNode(ComputeNode[] setInputNodes)
@@ -34,6 +36,18 @@ public class ComputeNode extends SingleNode
 	public void setOutputNode(ComputeNode[] setOutputNodes)
 	{
 		this.outputNodes=setOutputNodes;
+		for(ComputeNode outputNode: outputNodes)
+		{
+			((ComputeGraph)graph).addEdge(this, outputNode);
+		}
+	}
+	
+	public void addOutputNode(ComputeNode[] setOutputNodes)
+	{
+		ComputeNode[] newOutputNodes=new ComputeNode[this.outputNodes.length+setOutputNodes.length];
+		System.arraycopy(this.outputNodes, 0, newOutputNodes, 0, this.outputNodes.length);
+		System.arraycopy(setOutputNodes, 0, newOutputNodes, this.outputNodes.length, setOutputNodes.length);
+		this.outputNodes=newOutputNodes;
 		for(ComputeNode outputNode: outputNodes)
 		{
 			((ComputeGraph)graph).addEdge(this, outputNode);
@@ -55,9 +69,19 @@ public class ComputeNode extends SingleNode
 		}
 		Matrix[] outputMatrices=function.apply(inputs);
 		Hashtable<ComputeNode, Matrix> outputs=new Hashtable<>();
-		for(int outputInd=0; outputInd<outputNodes.length; outputInd++)
+		if(outputMatrices.length==1)
 		{
-			outputs.put(outputNodes[outputInd], outputMatrices[outputInd]);
+			for(int outputInd=0; outputInd<outputNodes.length; outputInd++)
+			{
+				outputs.put(outputNodes[outputInd], outputMatrices[0]);
+			}
+		}
+		else
+		{
+			for(int outputInd=0; outputInd<outputNodes.length; outputInd++)
+			{
+				outputs.put(outputNodes[outputInd], outputMatrices[outputInd]);
+			}
 		}
 		return outputs;
 	}

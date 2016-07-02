@@ -43,7 +43,7 @@ public class Combine extends DifferentiableFunction
 		else if(combineDimension==1)
 		{
 			split0=new FMatrix(dInput[0].getRows(), combineIndex);
-			split1=new FMatrix(dInput[0].getRows(), dInput[0].getCols()-combineIndex);
+			split1=new FMatrix(dInput[1].getRows(), dInput[1].getCols()-combineIndex);
 			for(int unsplitRowInd=0; unsplitRowInd<split0.getRows(); unsplitRowInd++)
 			{
 				for(int unsplitColInd=0; unsplitColInd<split0.getCols(); unsplitColInd++)
@@ -55,7 +55,7 @@ public class Combine extends DifferentiableFunction
 			{
 				for(int unsplitColInd=0; unsplitColInd<split1.getCols(); unsplitColInd++)
 				{
-					split1.set(unsplitRowInd, unsplitColInd, dInput[0].get(unsplitRowInd, unsplitColInd+combineIndex));
+					split1.set(unsplitRowInd, unsplitColInd, dInput[1].get(unsplitRowInd, unsplitColInd+combineIndex));
 				}
 			}
 		}
@@ -80,7 +80,7 @@ public class Combine extends DifferentiableFunction
 			{
 				for(int unsplitColInd=0; unsplitColInd<input[1].getCols(); unsplitColInd++)
 				{
-					combined.set(unsplitRowInd, unsplitColInd, input[0].get(unsplitRowInd-input[0].getRows(), unsplitColInd));
+					combined.set(unsplitRowInd, unsplitColInd, input[1].get(unsplitRowInd-input[0].getRows(), unsplitColInd));
 				}
 			}
 		}
@@ -98,7 +98,7 @@ public class Combine extends DifferentiableFunction
 			{
 				for(int unsplitColInd=input[0].getCols(); unsplitColInd<input[0].getCols()+input[1].getCols(); unsplitColInd++)
 				{
-					combined.set(unsplitRowInd, unsplitColInd, input[0].get(unsplitRowInd, unsplitColInd-input[0].getCols()));
+					combined.set(unsplitRowInd, unsplitColInd, input[1].get(unsplitRowInd, unsplitColInd-input[0].getCols()));
 				}
 			}
 		}
