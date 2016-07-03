@@ -14,6 +14,7 @@ import function.Function;
 import graph.ComputeGraph;
 import graph.InputSizeComputeGraph;
 import machineLearning.Learner.ExampleBatchDerivativeOptimizer;
+import machineLearning.activationFunction.Sigmoid;
 import machineLearning.activationFunction.TanH;
 import machineLearning.costFunction.Euclidean;
 import machineLearning.generalFunctions.Constant;
@@ -27,58 +28,73 @@ import matrix.FMatrix;
 import matrix.Matrix;
 import vertex.ComputeNode;
 
-public class SimpleRecurrentNetwork 
+public class SimpleRecurrentNetwork extends ComputeGraph
 {
 	
-	public ComputeGraph network;
 	public ComputeGraph unrolledNetwork;
 	List<ComputeNode> unrolledInputs;
 	public Constant initialState;
 	ComputeNode inputNode;
 	ComputeNode memoryNode;
-	ComputeNode sigmoid1Node;
+	ComputeNode computeOut;
 	ComputeNode[] unrolledObjectiveNodes;
 	boolean trainOutputMode;
 	int unrolls;
 	
-	public SimpleRecurrentNetwork(int[] inputShape, int[] outputShape, int unrolls)
+	public SimpleRecurrentNetwork(String name, int[] inputShape, int[] outputShape, int unrolls)
 	{
+		super(name);
 		this.unrolls=unrolls;
 		initialState=new Constant(new FMatrix(outputShape[0], outputShape[1]));
-		network=new ComputeGraph("SRN network");
 		trainOutputMode=true;
 
-		inputNode=network.addNode("input", new Input());
-		memoryNode=network.addNode("memory passthrough", new Passthrough());
-		ComputeNode combine=network.addNode("combine", new Combine(inputShape[0], 0));
+		inputNode=addNode("input", new Input());
+		memoryNode=addNode("memory passthrough", new Passthrough());
+		ComputeNode combine=addNode("combine", new Combine(inputShape[0], 0));
 		
-		ComputeNode weights1=network.addNode("hidden1 weights", new MMult(generateWeightMatrix(outputShape[0]*outputShape[1], inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])));
-		ComputeNode biases1=network.addNode("hidden1 biases", new MAdd(generateBiasMatrix(outputShape[0]*outputShape[1], 1)));
-		sigmoid1Node=network.addNode("hidden1 tanH", new TanH());
+		ComputeNode weights1=addNode("hidden1 weights", new MMult(generateWeightMatrix(2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])));
+		ComputeNode biases1=addNode("hidden1 biases", new MAdd(generateBiasMatrix(2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), 1)));
+		ComputeNode sigmoid1=addNode("hidden1 tanH", new Sigmoid());
 		
-		ComputeNode trainingOutputs=network.addNode("training outputs", new Input());
-		ComputeNode cost=network.addNode("cost function", new Euclidean());
+		ComputeNode weights2=addNode("hidden2 weights", new MMult(generateWeightMatrix(2*outputShape[0]*outputShape[1], 2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), 2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]))));
+		ComputeNode biases2=addNode("hidden2 biases", new MAdd(generateBiasMatrix(2*outputShape[0]*outputShape[1], 1)));
+		computeOut=addNode("hidden2 tanH", new Sigmoid());
+		
+		
+		ComputeNode splitNode=addNode("split", new Split(outputShape[0]*outputShape[1], 0));
+		
+		ComputeNode trainingOutputs=addNode("training outputs", new Input());
+		ComputeNode cost=addNode("cost function", new Euclidean());
 		
 		inputNode.setInputOutputNode(new ComputeNode[]{inputNode}, new ComputeNode[]{combine});
 		memoryNode.setOutputNode(new ComputeNode[]{combine});
+		
 		combine.setInputOutputNode(new ComputeNode[]{inputNode, memoryNode}, new ComputeNode[]{weights1});
+		
 		weights1.setInputOutputNode(new ComputeNode[]{combine}, new ComputeNode[]{biases1});
-		biases1.setInputOutputNode(new ComputeNode[]{weights1}, new ComputeNode[]{sigmoid1Node});
-		sigmoid1Node.setInputNode(new ComputeNode[]{biases1});
-		sigmoid1Node.setOutputNode(new ComputeNode[]{cost});
+		biases1.setInputOutputNode(new ComputeNode[]{weights1}, new ComputeNode[]{sigmoid1});
+		sigmoid1.setInputOutputNode(new ComputeNode[]{biases1}, new ComputeNode[]{weights2});
+		
+		weights2.setInputOutputNode(new ComputeNode[]{sigmoid1}, new ComputeNode[]{biases2});
+		biases2.setInputOutputNode(new ComputeNode[]{weights2}, new ComputeNode[]{computeOut});
+		computeOut.setInputOutputNode(new ComputeNode[]{biases2}, new ComputeNode[]{splitNode});
+		
+		splitNode.setInputOutputNode(new ComputeNode[]{computeOut}, new ComputeNode[]{cost});
 		trainingOutputs.setInputNode(new ComputeNode[]{trainingOutputs});
 		trainingOutputs.setOutputNode(new ComputeNode[]{cost});
-		cost.setInputOutputNode(new ComputeNode[]{sigmoid1Node, trainingOutputs}, new ComputeNode[]{cost});
+		cost.setInputOutputNode(new ComputeNode[]{splitNode, trainingOutputs}, new ComputeNode[]{cost});
 		
-		Object[] unrolledData=unroll(network, inputNode, memoryNode, sigmoid1Node, 
+		Object[] unrolledData=unroll(this, inputNode, memoryNode, splitNode, 
 				cost, trainingOutputs, unrolls);
 		unrolledNetwork=((ComputeGraph)(unrolledData[0]));
 		unrolledInputs=(List<ComputeNode>)(unrolledData[1]);
 		unrolledObjectiveNodes=(ComputeNode[])(unrolledData[2]);
 		
+		splitNode.addOutputNode(new ComputeNode[]{memoryNode});
+		
 		List<ComputeNode> outputVertices=new ArrayList<>();
 		outputVertices.add(cost);
-		network.setOutputVertices(outputVertices);
+		setOutputVertices(outputVertices);
 	}
 	
 		   //[0]=output, [1]=newRememberedState
@@ -87,14 +103,14 @@ public class SimpleRecurrentNetwork
 		if(trainOutputMode)
 		{
 			List<ComputeNode> outputVertices=new ArrayList<>();
-			outputVertices.add(sigmoid1Node);
-			network.setOutputVertices(outputVertices);
+			outputVertices.add(computeOut);
+			setOutputVertices(outputVertices);
 			trainOutputMode=false;
 		}
 		Hashtable<ComputeNode, Matrix> inputs=new Hashtable<>();
 		inputs.put(inputNode, input);
 		inputs.put(memoryNode, rememberedState);
-		Hashtable<ComputeNode, Matrix> outputs=network.getOutput(inputs);
+		Hashtable<ComputeNode, Matrix> outputs=getOutput(inputs);
 		return new Matrix[]{outputs.get(inputNode), outputs.get(memoryNode)};
 	}
 	
@@ -111,9 +127,9 @@ public class SimpleRecurrentNetwork
 						runTimeTrainingInd>(int)Math.max(-1, runTimeInd-unrolls); 
 						runTimeTrainingInd--)
 				{
-					inputsTable.put(unrolledInputs.get(2*(runTimeInd-runTimeTrainingInd)), 
+					inputsTable.put(unrolledInputs.get(2*(runTimeTrainingInd)), 
 							trainingInputs[runInd][runTimeTrainingInd][0]);
-					inputsTable.put(unrolledInputs.get(1+2*(runTimeInd-runTimeTrainingInd)), 
+					inputsTable.put(unrolledInputs.get(1+2*(runTimeTrainingInd)), 
 							trainingOutputs[runInd][runTimeTrainingInd][0]);
 				}
 				trainingExamples.add(inputsTable);
@@ -130,9 +146,9 @@ public class SimpleRecurrentNetwork
 						runTimeTrainingInd>(int)Math.max(-1, runTimeInd-unrolls); 
 						runTimeTrainingInd--)
 				{
-					inputsTable.put(unrolledInputs.get(2*(runTimeInd-runTimeTrainingInd)), 
+					inputsTable.put(unrolledInputs.get(2*(runTimeTrainingInd)), 
 							validationInputs[runInd][runTimeTrainingInd][0]);
-					inputsTable.put(unrolledInputs.get(1+2*(runTimeInd-runTimeTrainingInd)), 
+					inputsTable.put(unrolledInputs.get(1+2*(runTimeTrainingInd)), 
 							validationOutputs[runInd][runTimeTrainingInd][0]);
 				}
 				validationExamples.add(inputsTable);

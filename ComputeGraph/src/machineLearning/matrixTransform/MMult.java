@@ -19,7 +19,7 @@ public class MMult extends UpdatableDifferentiableFunction
 	@Override
 	public Matrix[][] differentiate(Matrix[] input, Matrix[] dInput) 
 	{
-		Matrix paramDiff=new FMatrix(input[0].getRows(), dInput[0].getRows());
+		Matrix paramDiff=new FMatrix(dInput[0].getRows(), input[0].getRows());
 		dInput[0].outProd(dInput[0], input[0], paramDiff);
 		Matrix objectiveDiff=new FMatrix(input[0].getRows(), 1);
 		objectiveDiff=((FMatrix)objectiveDiff).sgemv(true, 1.0f, paramMatrix, 

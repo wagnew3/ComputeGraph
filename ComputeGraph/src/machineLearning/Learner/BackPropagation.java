@@ -44,49 +44,67 @@ public class BackPropagation extends ExampleBatchDerivativeOptimizer
 			ComputeNode[] objectives) 
 	{
 		float totalError=0.0f;
-		
-		
-		int numberCorrect=0;
+	
 		long numberErrors=0;
-		for(int objectiveInd=0; objectiveInd<objectives.length; objectiveInd++)
+		double numberCorrect=0.0;
+		double totalTrys=0.0;
+		for(int validationExampleInd=0; validationExampleInd<validationExamples.size(); validationExampleInd++)
 		{
-			for(Hashtable<ComputeNode, Matrix> validationExample: validationExamples)
+			Hashtable<ComputeNode, Matrix> validationExample=validationExamples.get(validationExampleInd);
+			Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=cg.compute(validationExample);
+			for(int objectiveInd=0; objectiveInd<objectives.length; objectiveInd++)
 			{
-				Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=cg.compute(validationExample);
 				if(output.get(objectives[objectiveInd])!=null)
 				{
 					totalError+=output.get(objectives[objectiveInd]).get(objectives[objectiveInd]).get(0, 0);
 					numberErrors++;
-				}
-				/*
-				float max=-1;
-				int maxInd=-1;
-				for(int outInd=0; outInd<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).getLen(); outInd++)
-				{
-					if(max<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0))
+					
+					Matrix netOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]);
+					float netGuess=netOut.get(0, 0);
+					
+					Matrix trainOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[1]);
+					float trainAnswer=trainOut.get(0, 0);
+					
+					netGuess=Math.round(netGuess);
+					if(netGuess==trainAnswer)
 					{
-						max=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0);
-						maxInd=outInd;
+						numberCorrect++;
 					}
-				}
-				int correctInd=-2;
-				for(int outInd=0; outInd<validationExample.get(objectives[objectiveInd].inputNodes[1]).getLen(); outInd++)
-				{
-					if(validationExample.get(objectives[objectiveInd].inputNodes[1]).get(outInd, 0)==1.0f)
+					else
 					{
-						correctInd=outInd;
-						break;
+						int u=0;
 					}
+					totalTrys++;
 				}
-				if(maxInd!=correctInd)
-				{
-					numberCorrect++;
-				}
-				*/
 			}
+			/*
+			float max=-1;
+			int maxInd=-1;
+			for(int outInd=0; outInd<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).getLen(); outInd++)
+			{
+				if(max<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0))
+				{
+					max=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0);
+					maxInd=outInd;
+				}
+			}
+			int correctInd=-2;
+			for(int outInd=0; outInd<validationExample.get(objectives[objectiveInd].inputNodes[1]).getLen(); outInd++)
+			{
+				if(validationExample.get(objectives[objectiveInd].inputNodes[1]).get(outInd, 0)==1.0f)
+				{
+					correctInd=outInd;
+					break;
+				}
+			}
+			if(maxInd!=correctInd)
+			{
+				numberCorrect++;
+			}
+			*/
 		}
 		
-		System.out.println("Number classified incorrectly: "+numberCorrect);
+		System.out.println("Number classified correctly: "+numberCorrect+"/"+totalTrys);
 		
 		totalError/=numberErrors;
 		return totalError;

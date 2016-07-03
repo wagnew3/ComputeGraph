@@ -13,17 +13,17 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 {
 	
 	boolean initialized;
-	Hashtable<String, Matrix> previousDerivatives;
-	Hashtable<String, Matrix> deltasChanges;
-	Hashtable<String, Matrix> deltas;
+	Hashtable<ComputeNode, Matrix> previousDerivatives;
+	Hashtable<ComputeNode, Matrix> deltasChanges;
+	Hashtable<ComputeNode, Matrix> deltas;
 	
-	float np=1.2f;
-	float nm=0.5f;
+	float np=1.1f;
+	float nm=0.05f;
 	float maxDelta=50.0f;
 	float minDelta=0.000001f;
 
-	public RProp(List<Hashtable<String, Matrix>> examples, 
-			List<Hashtable<String, Matrix>> validationExamples,
+	public RProp(List<Hashtable<ComputeNode, Matrix>> examples, 
+			List<Hashtable<ComputeNode, Matrix>> validationExamples,
 			int batchSize, int numberEpochs) 
 	{
 		super(examples, validationExamples, batchSize, numberEpochs);
@@ -34,35 +34,33 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 	}
 
 	@Override
-	public void updateParameters(ComputeGraph cg, Hashtable<String, Matrix> batchDerivatives)
+	public void updateParameters(ComputeGraph cg, Hashtable<ComputeNode, Matrix> batchDerivatives)
 	{
 		if(!initialized)
 		{
-			for(String cNode: batchDerivatives.keySet())
+			for(ComputeNode node: batchDerivatives.keySet())
 			{
-				previousDerivatives.put(cNode, new FMatrix(batchDerivatives.get(cNode).getRows(), batchDerivatives.get(cNode).getCols()));
-				FMatrix deltasChangesMatrix=new FMatrix(batchDerivatives.get(cNode).getRows(), batchDerivatives.get(cNode).getCols());
+				previousDerivatives.put(node, new FMatrix(batchDerivatives.get(node).getRows(), batchDerivatives.get(node).getCols()));
+				FMatrix deltasChangesMatrix=new FMatrix(batchDerivatives.get(node).getRows(), batchDerivatives.get(node).getCols());
 				for(int rowInd=0; rowInd<deltasChangesMatrix.getRows(); rowInd++)
 				{
 					for(int colInd=0; colInd<deltasChangesMatrix.getCols(); colInd++)
 					{
-						deltasChangesMatrix.set(rowInd, colInd, 0.1f);
+						deltasChangesMatrix.set(rowInd, colInd, 0.01f);
 					}
 				}
-				deltasChanges.put(cNode, deltasChangesMatrix);
-				deltas.put(cNode, new FMatrix(batchDerivatives.get(cNode).getRows(), batchDerivatives.get(cNode).getCols()));
+				deltasChanges.put(node, deltasChangesMatrix);
+				deltas.put(node, new FMatrix(batchDerivatives.get(node).getRows(), batchDerivatives.get(node).getCols()));
 			}
 			initialized=true;
 		}
 		
-		float batchSizeScale=1.0f/getBatchSize();
-		for(String vertex: batchDerivatives.keySet())
+		for(ComputeNode node: batchDerivatives.keySet())
 		{
-			Matrix curDers=batchDerivatives.get(vertex);
-			curDers.omscal(batchSizeScale);
-			Matrix prevDers=previousDerivatives.get(vertex);
-			Matrix deltasChange=deltasChanges.get(vertex);
-			Matrix delta=deltas.get(vertex);
+			Matrix curDers=batchDerivatives.get(node);
+			Matrix prevDers=previousDerivatives.get(node);
+			Matrix deltasChange=deltasChanges.get(node);
+			Matrix delta=deltas.get(node);
 			
 			for(int devRow=0; devRow<prevDers.getRows(); devRow++)
 			{
@@ -78,6 +76,7 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 					{
 						deltasChange.set(devRow, devCol, Math.max(deltasChange.get(devRow, devCol)*nm, minDelta));
 						delta.set(devRow, devCol, -1.0f*delta.get(devRow, devCol));
+						curDers.set(devRow, devCol, 0.0f);
 					}
 					else
 					{
@@ -86,22 +85,80 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 				}
 			}
 			UpdatableDifferentiableFunction updateFunction
-				=((UpdatableDifferentiableFunction)((ComputeNode)cg.getNode(vertex)).getFunction());
+				=((UpdatableDifferentiableFunction)node.getFunction());
 			updateFunction.updateParameter(updateFunction.getParameter().omsub(delta));
-			previousDerivatives.put(vertex, curDers);
+			previousDerivatives.put(node, curDers);
 		}
 	}
 
 	@Override
-	public float validate(ComputeGraph cg, List<Hashtable<String, Matrix>> validationExamples) 
+	public float validate(ComputeGraph cg, List<Hashtable<ComputeNode, Matrix>> validationExamples,
+			ComputeNode[] objectives) 
 	{
 		float totalError=0.0f;
-		for(Hashtable<String, Matrix> validationExample: validationExamples)
+	
+		long numberErrors=0;
+		double numberCorrect=0.0;
+		double totalTrys=0.0;
+		for(Hashtable<ComputeNode, Matrix> validationExample: validationExamples)
 		{
-			Hashtable<String, Matrix> output=cg.getOutput(validationExample);
-			totalError+=output.get("cost function").get(0, 0);
+			Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=cg.compute(validationExample);
+			for(int objectiveInd=0; objectiveInd<objectives.length; objectiveInd++)
+			{
+				if(output.get(objectives[objectiveInd])!=null)
+				{
+					totalError+=output.get(objectives[objectiveInd]).get(objectives[objectiveInd]).get(0, 0);
+					numberErrors++;
+					
+					Matrix netOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]);
+					float netGuess=netOut.get(0, 0);
+					
+					Matrix trainOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[1]);
+					float trainAnswer=trainOut.get(0, 0);
+					
+					netGuess=Math.round(netGuess);
+					if(netGuess==trainAnswer)
+					{
+						numberCorrect++;
+					}
+					else
+					{
+						int u=0;
+					}
+					totalTrys++;
+					
+				}
+			}
+			/*
+			float max=-1;
+			int maxInd=-1;
+			for(int outInd=0; outInd<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).getLen(); outInd++)
+			{
+				if(max<output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0))
+				{
+					max=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]).get(outInd, 0);
+					maxInd=outInd;
+				}
+			}
+			int correctInd=-2;
+			for(int outInd=0; outInd<validationExample.get(objectives[objectiveInd].inputNodes[1]).getLen(); outInd++)
+			{
+				if(validationExample.get(objectives[objectiveInd].inputNodes[1]).get(outInd, 0)==1.0f)
+				{
+					correctInd=outInd;
+					break;
+				}
+			}
+			if(maxInd!=correctInd)
+			{
+				numberCorrect++;
+			}
+			*/
 		}
-		totalError/=validationExamples.size();
+		
+		System.out.println("Number classified correctly: "+numberCorrect+"/"+totalTrys);
+		
+		totalError/=numberErrors;
 		return totalError;
 	}
 

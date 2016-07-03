@@ -43,8 +43,8 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 		randomizedExamples.addAll(examples);
 		for(int epoch=0; epoch<numberEpochs; epoch++)
 		{
-			//Collections.shuffle(randomizedExamples);
-			System.out.println("unrandomized inputs");
+			Collections.shuffle(randomizedExamples);
+			//System.out.println("unrandomized inputs");
 						
 			for(int sampleInd=0; sampleInd<randomizedExamples.size(); sampleInd+=batchSize)
 			{
