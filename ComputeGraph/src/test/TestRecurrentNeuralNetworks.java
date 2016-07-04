@@ -54,8 +54,6 @@ public class TestRecurrentNeuralNetworks
 		
 		SimpleRecurrentNetwork srn=new SimpleRecurrentNetwork("simple recurrent network",
 				new int[]{2, 1}, new int[]{1,1}, exampleDuration);
-		
-		
 			
 		generated=0;
 		Matrix[][][] trainingInputs=new Matrix[numberExamples][][];
@@ -238,18 +236,18 @@ public class TestRecurrentNeuralNetworks
 			}
 		}
 		
-		RecurrentComputeGraph lstm=new DeepLSTM("lstm", inputShape, outputShape);
+		RecurrentComputeGraph lstm=new DeepLSTM("lstm", inputShape, outputShape, 3);
 				//new LSTM("lstm", inputShape, outputShape);
 		
 		//new VisualizeGraph(lstm);
 		
 		RecurrentNetwork rn=new RecurrentNetwork("General Recurrent Network", lstm, exampleDuration);
 		
-		//new VisualizeGraph(rn.unrolledNetwork);
+		new VisualizeGraph(rn.unrolledNetwork);
 		
 		ExampleBatchDerivativeOptimizer optimizer
-			=new RProp(null, null, 300, 1000);
-			//=new BackPropagation(null, null, 30000, 1000, 0.1f);
+			//=new RProp(null, null, 300, 1000);
+			=new BackPropagation(null, null, 300, 1000, 0.1f);
 			//=new Adam(null, null, 1000, 1000);
 			//=new Nestrov(null, null, 1000, 1000, 0.1f, 0.95f);
 		rn.train(optimizer, trainingInputs, trainingOutputs, validationInputs, validationOutputs);

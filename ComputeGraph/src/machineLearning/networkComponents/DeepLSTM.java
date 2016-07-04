@@ -23,20 +23,20 @@ import function.*;
 public class DeepLSTM extends RecurrentComputeGraph
 {
 
-	public DeepLSTM(String name, int[] inputShape, int[] outputShape) 
+	public DeepLSTM(String name, int[] inputShape, int[] outputShape, int memorySize) 
 	{
 		super(name);
 		
 		ComputeNode inputNode=addNode("input", new Input());
 		ComputeNode inputMemoryInitialState=addNode("inputMemoryInitialState", new Constant(new FMatrix(outputShape[0], outputShape[1])));
 		ComputeNode inputMemory=addNode("inputMemory", new Passthrough());
-		ComputeNode longTermMemoryInitialState=addNode("longTermMemoryInitialState", new Constant(new FMatrix(outputShape[0], outputShape[1])));
+		ComputeNode longTermMemoryInitialState=addNode("longTermMemoryInitialState", new Constant(new FMatrix(memorySize, 1)));
 		ComputeNode longTermMemoryInput=addNode("longTermMemoryInput", new Passthrough());
 		
 		ComputeNode combine=addNode("combine", new Combine(inputShape[0], 0));
 		
 		ComputeNode[] startForgetInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), outputShape[0]*outputShape[1]},
+				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), memorySize},
 				new DifferentiableFunction[]{new Sigmoid(), new Sigmoid()}, this, new String[]{"StartForget0", "StartForget1"});
 		ComputeNode startForgetWeights=startForgetInterfaces[0];
 		ComputeNode startForgetSigmoid=startForgetInterfaces[1];
@@ -44,7 +44,7 @@ public class DeepLSTM extends RecurrentComputeGraph
 		ComputeNode startForgetEbeMult=addNode("startForgetEbeMult", new EbeMult());
 		
 		ComputeNode[] updateAmountInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), outputShape[0]*outputShape[1]},
+				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), memorySize},
 				new DifferentiableFunction[]{new Sigmoid(), new Sigmoid()}, this, new String[]{"UpdateAmount0", "UpdateAmount1"});
 		ComputeNode updateAmountWeights=updateAmountInterfaces[0];
 		ComputeNode updateAmountSigmoid=updateAmountInterfaces[1];
@@ -52,7 +52,7 @@ public class DeepLSTM extends RecurrentComputeGraph
 		ComputeNode updateAmountEbeMult=addNode("updateAmountEbeMult", new EbeMult());
 		
 		ComputeNode[] updateContentInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), outputShape[0]*outputShape[1]},
+				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), memorySize},
 				new DifferentiableFunction[]{new TanH(), new TanH()}, this, new String[]{"UpdateContent0", "UpdateContent1"});
 		ComputeNode updateContentWeights=updateContentInterfaces[0];
 		ComputeNode updateContentTanH=updateContentInterfaces[1];
@@ -67,7 +67,11 @@ public class DeepLSTM extends RecurrentComputeGraph
 		
 		ComputeNode endForgetEbeMult=addNode("endForgetEbeMult", new EbeMult());
 		
-		ComputeNode outputTanH=addNode("outputTanH", new TanH());
+		ComputeNode[] outputInterfaces=LayerConstr.addLayers(new int[]{memorySize}, 
+				new int[]{outputShape[0]*outputShape[1]},
+				new DifferentiableFunction[]{new TanH()}, this, new String[]{"Output0"});
+		ComputeNode outputWeights=outputInterfaces[0];
+		ComputeNode outputTanH=outputInterfaces[1];
 		
 		ComputeNode trainingOutputsNode=addNode("training outputs", new Input());
 		ComputeNode cost=addNode("cost function", new CrossEntropy());
@@ -90,13 +94,14 @@ public class DeepLSTM extends RecurrentComputeGraph
 		updateContentWeights.setInputNode(new ComputeNode[]{combine});
 		updateContentTanH.setOutputNode(new ComputeNode[]{updateAmountEbeMult});
 		
-		updateContentAdd.setInputOutputNode(new ComputeNode[]{startForgetEbeMult, updateAmountEbeMult}, new ComputeNode[]{outputTanH});
+		updateContentAdd.setInputOutputNode(new ComputeNode[]{startForgetEbeMult, updateAmountEbeMult}, new ComputeNode[]{outputWeights});
 		
 		endForgetWeights.setInputNode(new ComputeNode[]{combine});
 		endForgetSigmoid.setOutputNode(new ComputeNode[]{endForgetEbeMult});
 		endForgetEbeMult.setInputOutputNode(new ComputeNode[]{outputTanH, endForgetSigmoid}, new ComputeNode[]{cost});
 		
-		outputTanH.setInputOutputNode(new ComputeNode[]{updateContentAdd}, new ComputeNode[]{endForgetEbeMult});
+		outputWeights.setInputNode(new ComputeNode[]{updateContentAdd});
+		outputTanH.setOutputNode(new ComputeNode[]{endForgetEbeMult});
 		
 		trainingOutputsNode.setInputOutputNode(new ComputeNode[]{trainingOutputsNode}, new ComputeNode[]{cost});
 		cost.setInputOutputNode(new ComputeNode[]{endForgetEbeMult, trainingOutputsNode}, new ComputeNode[]{cost});
