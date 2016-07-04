@@ -7,6 +7,7 @@ import org.apache.commons.math3.random.RandomGenerator;
 import graph.ComputeGraph;
 import machineLearning.activationFunction.Sigmoid;
 import machineLearning.activationFunction.TanH;
+import machineLearning.costFunction.CrossEntropy;
 import machineLearning.costFunction.Euclidean;
 import machineLearning.generalFunctions.Constant;
 import machineLearning.generalFunctions.Input;

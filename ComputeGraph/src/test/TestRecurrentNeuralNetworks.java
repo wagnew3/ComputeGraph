@@ -252,7 +252,7 @@ public class TestRecurrentNeuralNetworks
 			//=new RProp(null, null, 150000, 1000);
 			//=new BackPropagation(null, null, 30000, 1000, 0.1f);
 			//=new Adam(null, null, 30000, 1000);
-			=new Nestrov(null, null, 30000, 1000, 0.1f, 0.95f);
+			=new Nestrov(null, null, 1000, 1000, 0.1f, 0.95f);
 		rn.train(optimizer, trainingInputs, trainingOutputs, validationInputs, validationOutputs);
 	}
 	

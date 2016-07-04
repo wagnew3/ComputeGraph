@@ -156,7 +156,7 @@ class DeriveThread extends Thread
 	private static volatile ComputeGraph computeGraph;
 	public volatile Hashtable<ComputeNode, Matrix> batchParameterDerivatives;
 	
-	private static final int batchGetSize=10;
+	private static final int batchGetSize=100;
 	
 	public DeriveThread(ComputeGraph computeGraph)
 	{
