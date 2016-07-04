@@ -1,0 +1,14 @@
+node {
+	fill-color: blue;
+	text-mode: normal;
+	stroke-color: #000000;
+	text-size: 10;
+	text-style: bold;
+	z-index: 11;
+	shadow-mode: gradient-radial; shadow-width: 2px; shadow-color: #808080, #f2f2f2; shadow-offset: 3px, -3px;
+}
+
+edge {
+	arrow-shape: arrow;
+}
+

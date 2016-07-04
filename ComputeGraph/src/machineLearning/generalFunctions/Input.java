@@ -9,8 +9,7 @@ public class Input extends Function
 	@Override
 	public Matrix[] apply(Matrix[] input) 
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return input;
 	}
 
 }

@@ -310,7 +310,7 @@ public class FMatrix extends Matrix
 		}
 		else
 		{
-			mat.add(scalar);
+			mat.addi(scalar);
 			return this;
 		}
 	}
@@ -1044,56 +1044,71 @@ public class FMatrix extends Matrix
 	@Override
 	public Matrix scal(float alpha, int incx, Matrix result) 
 	{
-		//System.out.println("scal_start");
-		sendToGPU();
-		((FMatrix)result).sendToGPU();
-
-		if(!gpuPointer.equals(((FMatrix)result).gpuPointer))
+		if(GPU)
 		{
-			cublasScopy(handle, getLen(), gpuPointer, 1, ((FMatrix)result).gpuPointer, 1);
+			//System.out.println("scal_start");
+			sendToGPU();
+			((FMatrix)result).sendToGPU();
+	
+			if(!gpuPointer.equals(((FMatrix)result).gpuPointer))
+			{
+				cublasScopy(handle, getLen(), gpuPointer, 1, ((FMatrix)result).gpuPointer, 1);
+			}
+	
+			/*
+	        // Allocate memory on the device
+	        Pointer d_A = new Pointer();
+	        
+			
+	        Pointer d_B = new Pointer();
+	        */
+	        /*
+	        cudaMalloc(d_A, data.length*Sizeof.FLOAT);
+	        */
+	        /*
+	        int res=cudaMalloc(d_B, rows*columns*Sizeof.FLOAT);
+	        if(res==cudaErrorMemoryAllocation)
+	        {
+	        	System.out.println("Out of memory!");
+	        }
+	        */
+	        /*
+	        // Copy the memory from the host to the device
+	        cublasSetVector(data.length, Sizeof.FLOAT, Pointer.to(data), 1, d_A, 1);
+			*/
+	        
+	        // Execute sgemm
+	        Pointer pAlpha = Pointer.to(new float[]{alpha});
+	    	cublasSscal(handle, rows*columns, pAlpha, ((FMatrix)result).gpuPointer, incx);
+	
+	    	/*
+	        // Copy the result from the device to the host
+	        cublasGetVector(data.length, Sizeof.FLOAT, d_B, 1, Pointer.to(((FDMatrix)result).data), 1);
+			*/
+	    	
+	    	/*
+	        // Clean up
+	        cudaFree(d_A);
+	        */
+	        
+	       // cudaFree(d_B);
+	        
+	        //System.out.printl("scal_end");
+	        
+	        return result;
 		}
-
-		/*
-        // Allocate memory on the device
-        Pointer d_A = new Pointer();
-        
-		
-        Pointer d_B = new Pointer();
-        */
-        /*
-        cudaMalloc(d_A, data.length*Sizeof.FLOAT);
-        */
-        /*
-        int res=cudaMalloc(d_B, rows*columns*Sizeof.FLOAT);
-        if(res==cudaErrorMemoryAllocation)
-        {
-        	System.out.println("Out of memory!");
-        }
-        */
-        /*
-        // Copy the memory from the host to the device
-        cublasSetVector(data.length, Sizeof.FLOAT, Pointer.to(data), 1, d_A, 1);
-		*/
-        
-        // Execute sgemm
-        Pointer pAlpha = Pointer.to(new float[]{alpha});
-    	cublasSscal(handle, rows*columns, pAlpha, ((FMatrix)result).gpuPointer, incx);
-
-    	/*
-        // Copy the result from the device to the host
-        cublasGetVector(data.length, Sizeof.FLOAT, d_B, 1, Pointer.to(((FDMatrix)result).data), 1);
-		*/
-    	
-    	/*
-        // Clean up
-        cudaFree(d_A);
-        */
-        
-       // cudaFree(d_B);
-        
-        //System.out.printl("scal_end");
-        
-        return result;
+		else
+		{
+			((FMatrix)result).mat=mat.mul(alpha);
+			for(int updateRow=0; updateRow<result.getRows(); updateRow++)
+			{
+				if(!Float.isFinite(result.get(updateRow, 0)))
+				{
+					int u=0;
+				}
+			}
+			return result;
+		}
 	}
 	
 	public float asum()

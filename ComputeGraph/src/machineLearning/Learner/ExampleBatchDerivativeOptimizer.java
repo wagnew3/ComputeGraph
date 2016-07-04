@@ -13,7 +13,7 @@ import vertex.ComputeNode;
 public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 {
 	
-	static int numberThreads=4;
+	static int numberThreads=2;
 	
 	private List<Hashtable<ComputeNode, Matrix>> examples;
 	private List<Hashtable<ComputeNode, Matrix>> validationExamples;
@@ -175,13 +175,16 @@ class DeriveThread extends Thread
 				Hashtable<ComputeNode, Matrix> parameterDerivatives=computeGraph.derive(example);
 				for(ComputeNode nodeDeriv: parameterDerivatives.keySet())
 				{
-					if(batchParameterDerivatives.get(nodeDeriv)==null)
+					synchronized(batchParameterDerivatives)
 					{
-						batchParameterDerivatives.put(nodeDeriv, parameterDerivatives.get(nodeDeriv));
-					}
-					else
-					{
-						batchParameterDerivatives.get(nodeDeriv).omad(parameterDerivatives.get(nodeDeriv));
+						if(batchParameterDerivatives.get(nodeDeriv)==null)
+						{
+							batchParameterDerivatives.put(nodeDeriv, parameterDerivatives.get(nodeDeriv));
+						}
+						else
+						{
+							batchParameterDerivatives.get(nodeDeriv).omad(parameterDerivatives.get(nodeDeriv));
+						}
 					}
 				}
 			}
@@ -220,7 +223,10 @@ class DeriveThread extends Thread
 	public void reset()
 	{
 		exampleInd=0;
-		batchParameterDerivatives=new Hashtable<>();
+		synchronized(batchParameterDerivatives)
+		{
+			batchParameterDerivatives=new Hashtable<>();
+		}
 	}
 	
 	public void setExamples(Hashtable<ComputeNode, Matrix>[] batchExamples)
