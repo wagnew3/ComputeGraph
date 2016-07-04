@@ -158,6 +158,7 @@ class DeriveThread extends Thread
 	
 	public DeriveThread(ComputeGraph computeGraph)
 	{
+		batchParameterDerivatives=new Hashtable<>();
 		this.batchExamples=new Hashtable[0];
 		this.computeGraph=computeGraph;
 		stop=false;

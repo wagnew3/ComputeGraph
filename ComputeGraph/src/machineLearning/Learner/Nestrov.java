@@ -32,7 +32,6 @@ public class Nestrov extends ExampleBatchDerivativeOptimizer
 	public void updateParameters(ComputeGraph cg, Hashtable<ComputeNode, Matrix> batchDerivatives)
 	{
 		float batchSizeScale=1.0f/getBatchSize();
-		batchSizeScale*=learningRate;
 		for(ComputeNode vertex: batchDerivatives.keySet())
 		{
 			Matrix gradient=batchDerivatives.get(vertex);
@@ -41,7 +40,7 @@ public class Nestrov extends ExampleBatchDerivativeOptimizer
 				momentums.put(vertex, new FMatrix(gradient.getRows(), gradient.getCols()));
 			}
 			Matrix momentum=momentums.get(vertex);
-			momentum=momentum.omscal(momentumParam).omad(gradient.omscal(learningRate));
+			momentum=momentum.omscal(momentumParam).omad(gradient.omscal(learningRate*batchSizeScale));
 
 			UpdatableDifferentiableFunction updateFunction
 				=((UpdatableDifferentiableFunction)(vertex).getFunction());

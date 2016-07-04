@@ -19,7 +19,7 @@ import graph.ComputeGraph;
 import machineLearning.Learner.Adam;
 import machineLearning.Learner.BackPropagation;
 import machineLearning.Learner.ExampleBatchDerivativeOptimizer;
-import machineLearning.Learner.RProp;
+import machineLearning.Learner.*;
 import machineLearning.activationFunction.Sigmoid;
 import machineLearning.activationFunction.TanH;
 import machineLearning.costFunction.Euclidean;
