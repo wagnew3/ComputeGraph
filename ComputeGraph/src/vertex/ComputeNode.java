@@ -60,6 +60,52 @@ public class ComputeNode extends SingleNode
 		setOutputNode(setOutputNodes);
 	}
 	
+	public void removeInputNode(ComputeNode node)
+	{
+		int removeInd=-1;
+		for(int inInd=0; inInd<inputNodes.length; inInd++)
+		{
+			if(inputNodes[inInd].equals(node))
+			{
+				removeInd=inInd;
+				break;
+			}
+		}
+		if(removeInd>-1)
+		{
+			ComputeNode[] newInputNodes=new ComputeNode[inputNodes.length-1];
+			System.arraycopy(inputNodes, 0, newInputNodes, 0, removeInd);
+			if(removeInd+1<inputNodes.length)
+			{
+				System.arraycopy(inputNodes, removeInd+1, newInputNodes, removeInd, newInputNodes.length-removeInd);
+			}
+			inputNodes=newInputNodes;
+		}
+	}
+	
+	public void removeOutputNode(ComputeNode node)
+	{
+		int removeInd=-1;
+		for(int inInd=0; inInd<outputNodes.length; inInd++)
+		{
+			if(outputNodes[inInd].equals(node))
+			{
+				removeInd=inInd;
+				break;
+			}
+		}
+		if(removeInd>-1)
+		{
+			ComputeNode[] newOutputNodes=new ComputeNode[outputNodes.length-1];
+			System.arraycopy(outputNodes, 0, newOutputNodes, 0, removeInd);
+			if(removeInd+1<outputNodes.length)
+			{
+				System.arraycopy(outputNodes, removeInd+1, newOutputNodes, removeInd, newOutputNodes.length-removeInd);
+			}
+			outputNodes=newOutputNodes;
+		}
+	}
+	
 	public Hashtable<ComputeNode, Matrix> getOutput(Hashtable<ComputeNode, Matrix> input)
 	{
 		Matrix[] inputs=new Matrix[inputNodes.length];

@@ -113,5 +113,35 @@ public abstract class Matrix implements Serializable
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	public Matrix ebemult(Matrix multVec, Matrix result) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Matrix sADD(float scalar) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Matrix osADD(float scalar) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Matrix ebeDiv(Matrix divVec, Matrix result) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Matrix oebeDiv(Matrix divVec) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Matrix oebePow(float pow) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

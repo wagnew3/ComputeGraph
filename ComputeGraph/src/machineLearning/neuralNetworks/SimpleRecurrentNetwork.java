@@ -21,8 +21,8 @@ import machineLearning.generalFunctions.Constant;
 import machineLearning.generalFunctions.Input;
 import machineLearning.generalFunctions.Passthrough;
 import machineLearning.matrixTransform.Combine;
-import machineLearning.matrixTransform.MAdd;
-import machineLearning.matrixTransform.MMult;
+import machineLearning.matrixTransform.ParamMAdd;
+import machineLearning.matrixTransform.ParamMMult;
 import machineLearning.matrixTransform.Split;
 import matrix.FMatrix;
 import matrix.Matrix;
@@ -52,12 +52,12 @@ public class SimpleRecurrentNetwork extends ComputeGraph
 		memoryNode=addNode("memory passthrough", new Passthrough());
 		ComputeNode combine=addNode("combine", new Combine(inputShape[0], 0));
 		
-		ComputeNode weights1=addNode("hidden1 weights", new MMult(generateWeightMatrix(2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])));
-		ComputeNode biases1=addNode("hidden1 biases", new MAdd(generateBiasMatrix(2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), 1)));
+		ComputeNode weights1=addNode("hidden1 weights", new ParamMMult(generateWeightMatrix(2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])));
+		ComputeNode biases1=addNode("hidden1 biases", new ParamMAdd(generateBiasMatrix(2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), 1)));
 		ComputeNode sigmoid1=addNode("hidden1 tanH", new Sigmoid());
 		
-		ComputeNode weights2=addNode("hidden2 weights", new MMult(generateWeightMatrix(2*outputShape[0]*outputShape[1], 2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), 2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]))));
-		ComputeNode biases2=addNode("hidden2 biases", new MAdd(generateBiasMatrix(2*outputShape[0]*outputShape[1], 1)));
+		ComputeNode weights2=addNode("hidden2 weights", new ParamMMult(generateWeightMatrix(2*outputShape[0]*outputShape[1], 2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), 2*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]))));
+		ComputeNode biases2=addNode("hidden2 biases", new ParamMAdd(generateBiasMatrix(2*outputShape[0]*outputShape[1], 1)));
 		computeOut=addNode("hidden2 tanH", new Sigmoid());
 		
 		

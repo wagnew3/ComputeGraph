@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
+import org.graphstream.graph.Node;
 import org.graphstream.graph.NodeFactory;
 import org.graphstream.graph.implementations.AbstractGraph;
 import org.graphstream.graph.implementations.SingleGraph;
@@ -51,6 +52,18 @@ public class ComputeGraph extends SingleGraph
 		ComputeNode newNode=addNode(name);
 		newNode.setFunction(function);
 		return newNode;
+	}
+	
+	public void removeNode(ComputeNode node)
+	{
+		super.removeNode(node);
+		ComputeNode toRemove=(ComputeNode)node;
+		for(Node otherNode: getNodeSet())
+		{
+			ComputeNode otherComputeNode=(ComputeNode)otherNode;
+			otherComputeNode.removeInputNode(toRemove);
+			otherComputeNode.removeOutputNode(toRemove);
+		}
 	}
 	
 	public Edge addEdge(ComputeNode c0, ComputeNode c1)

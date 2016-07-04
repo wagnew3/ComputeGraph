@@ -8,8 +8,8 @@ import graph.ComputeGraph;
 import machineLearning.activationFunction.TanH;
 import machineLearning.costFunction.Euclidean;
 import machineLearning.generalFunctions.Input;
-import machineLearning.matrixTransform.MAdd;
-import machineLearning.matrixTransform.MMult;
+import machineLearning.matrixTransform.ParamMAdd;
+import machineLearning.matrixTransform.ParamMMult;
 import matrix.FMatrix;
 import matrix.Matrix;
 
@@ -22,11 +22,11 @@ public class LSTM
 	{
 		network=new ComputeGraph("LSTM network");
 		network.addNode("input", new Input());
-		network.addNode("hidden1 weights", new MMult(generateWeightMatrix(10, 28*28, 28*28)));
-		network.addNode("hidden1 biases", new MAdd(generateBiasMatrix(10, 1)));
+		network.addNode("hidden1 weights", new ParamMMult(generateWeightMatrix(10, 28*28, 28*28)));
+		network.addNode("hidden1 biases", new ParamMAdd(generateBiasMatrix(10, 1)));
 		network.addNode("hidden1 sigmoid", new TanH());
-		network.addNode("output weights", new MMult(generateWeightMatrix(10, 10, 10)));
-		network.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
+		network.addNode("output weights", new ParamMMult(generateWeightMatrix(10, 10, 10)));
+		network.addNode("output biases", new ParamMAdd(generateBiasMatrix(10, 1)));
 		network.addNode("output sigmoid", new TanH());
 		
 		

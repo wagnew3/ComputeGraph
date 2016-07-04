@@ -6,12 +6,12 @@ import function.UpdatableDifferentiableFunction;
 import matrix.FMatrix;
 import matrix.Matrix;
 
-public class MMult extends UpdatableDifferentiableFunction
+public class ParamMMult extends UpdatableDifferentiableFunction
 {
 	
 	Matrix paramMatrix;
 	
-	public MMult(Matrix paramMatrix)
+	public ParamMMult(Matrix paramMatrix)
 	{
 		this.paramMatrix=paramMatrix;
 	}

@@ -1,44 +1,21 @@
 package machineLearning.matrixTransform;
 
-import java.util.Hashtable;
-
-import function.UpdatableDifferentiableFunction;
+import function.DifferentiableFunction;
 import matrix.Matrix;
 
-public class MAdd extends UpdatableDifferentiableFunction
+public class MAdd extends DifferentiableFunction 
 {
-	
-	Matrix add;
-	
-	public MAdd(Matrix add)
-	{
-		this.add=add;
-	}
-
-	@Override
-	public Matrix getParameter() 
-	{
-		return add;
-	}
-
-	@Override
-	public void updateParameter(Matrix newValue)
-	{
-		add=newValue;
-	}
 
 	@Override
 	public Matrix[][] differentiate(Matrix[] input, Matrix[] dInput) 
 	{
-		Matrix derivative=dInput[0];
-		return new Matrix[][]{new Matrix[]{derivative}, new Matrix[]{derivative}};
+		return new Matrix[][]{new Matrix[]{dInput[0], dInput[0]}, null};
 	}
 
 	@Override
 	public Matrix[] apply(Matrix[] input) 
 	{
-		Matrix inputMatrix=input[0];
-		return new Matrix[]{inputMatrix.mad(add)};
+		return new Matrix[]{input[0].mad(input[1])};
 	}
 
 }

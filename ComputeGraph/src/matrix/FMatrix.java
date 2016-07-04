@@ -285,6 +285,37 @@ public class FMatrix extends Matrix
 	}
 	
 	@Override
+	public Matrix sADD(float scalar)
+	{
+		if(GPU)
+		{
+			System.out.println("GPU sADD not implemented!");
+			return null;
+		}
+		else
+		{
+			FMatrix result=new FMatrix(getRows(), getCols());
+			result.mat.add(scalar);
+			return result;
+		}
+	}
+	
+	@Override
+	public Matrix osADD(float scalar)
+	{
+		if(GPU)
+		{
+			System.out.println("GPU osADD not implemented!");
+			return null;
+		}
+		else
+		{
+			mat.add(scalar);
+			return this;
+		}
+	}
+	
+	@Override
 	public Matrix otrans() 
 	{
 		if(!(rows==1 || columns==1))
@@ -354,6 +385,71 @@ public class FMatrix extends Matrix
 			mat.muli(((FMatrix)multVec).mat);
 			return this;
 		}
+	}
+	
+	@Override
+	public Matrix ebemult(Matrix multVec, Matrix result)
+	{
+		if(GPU)
+		{
+			return sbmv('u', 0, 1.0f, this, multVec, 0.0f, result);
+		}
+		else
+		{
+			((FMatrix)result).mat=mat.mul(((FMatrix)multVec).mat);
+			return result;
+		}
+	}
+	
+	@Override
+	public Matrix oebeDiv(Matrix divVec)
+	{
+		if(GPU)
+		{
+			System.out.println("GPU oebeDiv not implemented!");
+			return null;
+		}
+		else
+		{
+			mat.divi(((FMatrix)divVec).mat);
+			return this;
+		}
+	}
+	
+	@Override
+	public Matrix ebeDiv(Matrix divVec, Matrix result)
+	{
+		if(GPU)
+		{
+			System.out.println("GPU ebeDiv not implemented!");
+			return null;
+		}
+		else
+		{
+			((FMatrix)result).mat=mat.div(((FMatrix)divVec).mat);
+			return result;
+		}
+	}
+	
+	@Override
+	public Matrix oebePow(float pow)
+	{
+		if(GPU)
+		{
+			System.out.println("GPU ebePow not implemented!");
+			return null;
+		}
+		else
+		{
+			for(int rowInd=0; rowInd<getRows(); rowInd++)
+			{
+				for(int colInd=0; colInd<getCols(); colInd++)
+				{
+					mat.put(rowInd, colInd, (float)Math.pow(mat.get(rowInd, colInd), pow));
+				}
+			}
+		}
+		return this;
 	}
 
 	@Override

@@ -19,8 +19,8 @@ import machineLearning.activationFunction.TanH;
 import machineLearning.costFunction.Euclidean;
 import machineLearning.generalFunctions.Input;
 import machineLearning.matrixTransform.Combine;
-import machineLearning.matrixTransform.MAdd;
-import machineLearning.matrixTransform.MMult;
+import machineLearning.matrixTransform.ParamMAdd;
+import machineLearning.matrixTransform.ParamMMult;
 import machineLearning.matrixTransform.Split;
 import matrix.FMatrix;
 import matrix.Matrix;
@@ -40,11 +40,11 @@ public class TestWorking
 	{
 		ComputeGraph cg=new ComputeGraph("standard network");
 		cg.addNode("input", new Input());
-		cg.addNode("hidden1 weights", new MMult(new FMatrix(new float[][]{new float[]{0.15f, 0.20f}, new float[]{0.25f, 0.30f}})));
-		cg.addNode("hidden1 biases", new MAdd(new FMatrix(new float[][]{new float[]{0.35f}, new float[]{0.35f}})));
+		cg.addNode("hidden1 weights", new ParamMMult(new FMatrix(new float[][]{new float[]{0.15f, 0.20f}, new float[]{0.25f, 0.30f}})));
+		cg.addNode("hidden1 biases", new ParamMAdd(new FMatrix(new float[][]{new float[]{0.35f}, new float[]{0.35f}})));
 		cg.addNode("hidden1 sigmoid", new Sigmoid());
-		cg.addNode("output weights", new MMult(new FMatrix(new float[][]{new float[]{0.40f, 0.45f}, new float[]{0.50f, 0.55f}})));
-		cg.addNode("output biases", new MAdd(new FMatrix(new float[][]{new float[]{0.60f}, new float[]{0.60f}})));
+		cg.addNode("output weights", new ParamMMult(new FMatrix(new float[][]{new float[]{0.40f, 0.45f}, new float[]{0.50f, 0.55f}})));
+		cg.addNode("output biases", new ParamMAdd(new FMatrix(new float[][]{new float[]{0.60f}, new float[]{0.60f}})));
 		cg.addNode("output sigmoid", new Sigmoid());
 		
 		
@@ -83,11 +83,11 @@ public class TestWorking
 	{
 		ComputeGraph cg=new ComputeGraph("standard network");
 		ComputeNode input=cg.addNode("input", new Input());
-		ComputeNode weights1=cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(100, 28*28, 28*28)));
-		ComputeNode biases1=cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(100, 1)));
+		ComputeNode weights1=cg.addNode("hidden1 weights", new ParamMMult(generateWeightMatrix(100, 28*28, 28*28)));
+		ComputeNode biases1=cg.addNode("hidden1 biases", new ParamMAdd(generateBiasMatrix(100, 1)));
 		ComputeNode sigmoid1=cg.addNode("hidden1 sigmoid", new TanH());
-		ComputeNode outWeights=cg.addNode("output weights", new MMult(generateWeightMatrix(10, 100, 100)));
-		ComputeNode outBiases=cg.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
+		ComputeNode outWeights=cg.addNode("output weights", new ParamMMult(generateWeightMatrix(10, 100, 100)));
+		ComputeNode outBiases=cg.addNode("output biases", new ParamMAdd(generateBiasMatrix(10, 1)));
 		ComputeNode outSigmoid=cg.addNode("output sigmoid", new TanH());
 		ComputeNode trainingOutputs=cg.addNode("training outputs", new Input());
 		ComputeNode cost=cg.addNode("cost function", new Euclidean());
@@ -141,24 +141,24 @@ public class TestWorking
 	{
 		ComputeGraph cg=new ComputeGraph("standard network");
 		ComputeNode input=cg.addNode("input", new Input());
-		ComputeNode weights1=cg.addNode("hidden1 weights", new MMult(generateWeightMatrix(100, 28*28, 28*28)));
-		ComputeNode biases1=cg.addNode("hidden1 biases", new MAdd(generateBiasMatrix(100, 1)));
+		ComputeNode weights1=cg.addNode("hidden1 weights", new ParamMMult(generateWeightMatrix(100, 28*28, 28*28)));
+		ComputeNode biases1=cg.addNode("hidden1 biases", new ParamMAdd(generateBiasMatrix(100, 1)));
 		ComputeNode sigmoid1=cg.addNode("hidden1 sigmoid", new TanH());
 		
 		ComputeNode split=cg.addNode("split", new Split(50, 0));
 		
-		ComputeNode weights2a=cg.addNode("hidden2a weights", new MMult(generateWeightMatrix(20, 50, 50)));
-		ComputeNode biases2a=cg.addNode("hidden2a biases", new MAdd(generateBiasMatrix(20, 1)));
+		ComputeNode weights2a=cg.addNode("hidden2a weights", new ParamMMult(generateWeightMatrix(20, 50, 50)));
+		ComputeNode biases2a=cg.addNode("hidden2a biases", new ParamMAdd(generateBiasMatrix(20, 1)));
 		ComputeNode sigmoid2a=cg.addNode("hidden2a sigmoid", new TanH());
 		
-		ComputeNode weights2b=cg.addNode("hidden2b weights", new MMult(generateWeightMatrix(20, 50, 50)));
-		ComputeNode biases2b=cg.addNode("hidden2b biases", new MAdd(generateBiasMatrix(20, 1)));
+		ComputeNode weights2b=cg.addNode("hidden2b weights", new ParamMMult(generateWeightMatrix(20, 50, 50)));
+		ComputeNode biases2b=cg.addNode("hidden2b biases", new ParamMAdd(generateBiasMatrix(20, 1)));
 		ComputeNode sigmoid2b=cg.addNode("hidden2b sigmoid", new TanH());
 		
 		ComputeNode combine=cg.addNode("combine", new Combine(20, 0));
 		
-		ComputeNode outWeights=cg.addNode("output weights", new MMult(generateWeightMatrix(10, 40, 40)));
-		ComputeNode outBiases=cg.addNode("output biases", new MAdd(generateBiasMatrix(10, 1)));
+		ComputeNode outWeights=cg.addNode("output weights", new ParamMMult(generateWeightMatrix(10, 40, 40)));
+		ComputeNode outBiases=cg.addNode("output biases", new ParamMAdd(generateBiasMatrix(10, 1)));
 		ComputeNode outSigmoid=cg.addNode("output sigmoid", new TanH());
 		ComputeNode trainingOutputs=cg.addNode("training outputs", new Input());
 		ComputeNode cost=cg.addNode("cost function", new Euclidean());

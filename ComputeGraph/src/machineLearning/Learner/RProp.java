@@ -17,8 +17,8 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 	Hashtable<ComputeNode, Matrix> deltasChanges;
 	Hashtable<ComputeNode, Matrix> deltas;
 	
-	float np=1.1f;
-	float nm=0.05f;
+	float np=1.2f;
+	float nm=0.5f;
 	float maxDelta=50.0f;
 	float minDelta=0.000001f;
 

@@ -9,11 +9,13 @@ public class Split extends DifferentiableFunction
 	
 	int splitIndex;
 	int splitDimension;
+	int combinedSize;
 	
-	public Split(int splitIndex, int splitDimension)
+	public Split(int splitIndex, int splitDimension, int combinedSize)
 	{
 		this.splitIndex=splitIndex;
 		this.splitDimension=splitDimension;
+		this.combinedSize=combinedSize;
 	}
 
 	@Override
@@ -23,7 +25,7 @@ public class Split extends DifferentiableFunction
 		
 		if(dInput.length==1 || dInput[1]==null)
 		{
-			dUnsplit=new FMatrix(2*dInput[0].getRows(), dInput[0].getCols());
+			dUnsplit=new FMatrix(combinedSize, dInput[0].getCols());
 			for(int unsplitRowInd=0; unsplitRowInd<dInput[0].getRows(); unsplitRowInd++)
 			{
 				for(int unsplitColInd=0; unsplitColInd<dInput[0].getCols(); unsplitColInd++)
