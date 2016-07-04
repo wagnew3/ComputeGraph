@@ -35,32 +35,32 @@ public class DeepLSTM extends RecurrentComputeGraph
 		
 		ComputeNode combine=addNode("combine", new Combine(inputShape[0], 0));
 		
-		ComputeNode[] startForgetInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), memorySize},
+		ComputeNode[] startForgetInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+memorySize, 3*(inputShape[0]*inputShape[1]+memorySize)}, 
+				new int[]{3*(inputShape[0]*inputShape[1]+memorySize), memorySize},
 				new DifferentiableFunction[]{new Sigmoid(), new Sigmoid()}, this, new String[]{"StartForget0", "StartForget1"});
 		ComputeNode startForgetWeights=startForgetInterfaces[0];
 		ComputeNode startForgetSigmoid=startForgetInterfaces[1];
 		
 		ComputeNode startForgetEbeMult=addNode("startForgetEbeMult", new EbeMult());
 		
-		ComputeNode[] updateAmountInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), memorySize},
+		ComputeNode[] updateAmountInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+memorySize, 3*(inputShape[0]*inputShape[1]+memorySize)}, 
+				new int[]{3*(inputShape[0]*inputShape[1]+memorySize), memorySize},
 				new DifferentiableFunction[]{new Sigmoid(), new Sigmoid()}, this, new String[]{"UpdateAmount0", "UpdateAmount1"});
 		ComputeNode updateAmountWeights=updateAmountInterfaces[0];
 		ComputeNode updateAmountSigmoid=updateAmountInterfaces[1];
 		
 		ComputeNode updateAmountEbeMult=addNode("updateAmountEbeMult", new EbeMult());
 		
-		ComputeNode[] updateContentInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), memorySize},
+		ComputeNode[] updateContentInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+memorySize, 3*(inputShape[0]*inputShape[1]+memorySize)}, 
+				new int[]{3*(inputShape[0]*inputShape[1]+memorySize), memorySize},
 				new DifferentiableFunction[]{new TanH(), new TanH()}, this, new String[]{"UpdateContent0", "UpdateContent1"});
 		ComputeNode updateContentWeights=updateContentInterfaces[0];
 		ComputeNode updateContentTanH=updateContentInterfaces[1];
 		
 		ComputeNode updateContentAdd=addNode("updateContentAdd", new MAdd());
 		
-		ComputeNode[] endForgetInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1], 3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1])}, 
-				new int[]{3*(inputShape[0]*inputShape[1]+outputShape[0]*outputShape[1]), outputShape[0]*outputShape[1]},
+		ComputeNode[] endForgetInterfaces=LayerConstr.addLayers(new int[]{inputShape[0]*inputShape[1]+memorySize, 3*(inputShape[0]*inputShape[1]+memorySize)}, 
+				new int[]{3*(inputShape[0]*inputShape[1]+memorySize), outputShape[0]*outputShape[1]},
 				new DifferentiableFunction[]{new Sigmoid(), new Sigmoid()}, this, new String[]{"EndForget0", "EndForget1"});
 		ComputeNode endForgetWeights=endForgetInterfaces[0];
 		ComputeNode endForgetSigmoid=endForgetInterfaces[1];
@@ -78,10 +78,10 @@ public class DeepLSTM extends RecurrentComputeGraph
 		
 		inputNode.setInputOutputNode(new ComputeNode[]{inputNode}, new ComputeNode[]{combine});
 		inputMemoryInitialState.setInputOutputNode(new ComputeNode[]{}, new ComputeNode[]{inputMemory});
-		inputMemory.setInputOutputNode(new ComputeNode[]{inputMemoryInitialState}, new ComputeNode[]{combine});
+		inputMemory.setInputOutputNode(new ComputeNode[]{inputMemoryInitialState}, new ComputeNode[]{});
 		longTermMemoryInitialState.setInputOutputNode(new ComputeNode[]{}, new ComputeNode[]{longTermMemoryInput});
-		longTermMemoryInput.setInputOutputNode(new ComputeNode[]{longTermMemoryInitialState}, new ComputeNode[]{startForgetEbeMult});
-		combine.setInputOutputNode(new ComputeNode[]{inputNode, inputMemory}, new ComputeNode[]{startForgetWeights, updateAmountWeights, updateContentWeights, endForgetWeights});
+		longTermMemoryInput.setInputOutputNode(new ComputeNode[]{longTermMemoryInitialState}, new ComputeNode[]{startForgetEbeMult, combine});
+		combine.setInputOutputNode(new ComputeNode[]{inputNode, longTermMemoryInput}, new ComputeNode[]{startForgetWeights, updateAmountWeights, updateContentWeights, endForgetWeights});
 		
 		startForgetWeights.setInputNode(new ComputeNode[]{combine});
 		startForgetSigmoid.setOutputNode(new ComputeNode[]{startForgetEbeMult});
@@ -112,7 +112,7 @@ public class DeepLSTM extends RecurrentComputeGraph
 		inputNodes.add(inputNode);
 		inputNodes.add(trainingOutputsNode);
 		
-		memoryInNodes.add(inputMemory);
+		memoryInNodes.add(longTermMemoryInput);
 		memoryInNodes.add(longTermMemoryInput);
 		
 		memoryOutNodes.add(endForgetEbeMult);
