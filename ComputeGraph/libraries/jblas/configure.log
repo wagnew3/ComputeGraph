@@ -1,0 +1,37 @@
+Searching for command java
+Searching for command javac
+Setting FOUND_JAVA to true
+Setting OS_NAME to Linux
+Setting OS_ARCH to amd64
+Searching for command gcc
+Setting OS_ARCH_WITH_FLAVOR to amd64/sse3
+Searching for command nm
+Setting NM to nm
+Setting FOUND_NM to true
+Searching for file /usr/lib/jvm/java-8-oracle/include/jni.h
+Setting JAVA_HOME to /usr/lib/jvm/java-8-oracle
+Searching for command gcc
+Searching for command make
+Searching for command ld
+Setting CC to gcc
+Setting CFLAGS to -fPIC
+Setting INCDIRS to ["-Iinclude -I/usr/lib/jvm/java-8-oracle/include -I/usr/lib/jvm/java-8-oracle/include/linux"]
+Setting SO to so
+Setting LIB to lib
+Setting RUBY to ruby
+Setting LDFLAGS to ["-shared"]
+Setting F77 to gfortran
+Setting LD to gcc
+Setting CCC to c99
+Setting MAKE to make
+Searching for file ./lapack-lite-3.1.1/BLAS/SRC/dgemm.f
+Searching for command wget
+Searching for file ./lapack-lite-3.1.1/BLAS/SRC/dgemm.f
+Searching for file ./lapack-lite-3.1.1/SRC/dsyev.f
+Setting LAPACK_HOME to ./lapack-lite-3.1.1
+Setting LINKAGE_TYPE to static
+Setting libpath to ["/opt/OpenBLAS/lib"]
+Setting BUILD_TYPE to openblas
+Setting LOADLIBES to ["-Wl,-z,muldefs"]
+Setting LOADLIBES to ["-Wl,-z,muldefs", "/opt/OpenBLAS/lib/libopenblas.a"]
+Setting LOADLIBES to ["-Wl,-z,muldefs", "/opt/OpenBLAS/lib/libopenblas.a", "-lgfortran"]

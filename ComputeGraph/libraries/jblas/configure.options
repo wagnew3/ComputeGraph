@@ -1,0 +1,1 @@
+--static-libs --libpath=/opt/OpenBLAS/lib --libs=openblas --download-lapack --build-type=openblas

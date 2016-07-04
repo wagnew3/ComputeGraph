@@ -1,0 +1,5 @@
+<project name="imported-configuration-settings">
+<property name="os_name" value="Linux" />
+<property name="os_arch" value="amd64" />
+<property name="linkage" value="static" />
+</project>
