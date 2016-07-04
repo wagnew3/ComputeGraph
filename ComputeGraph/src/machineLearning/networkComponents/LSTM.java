@@ -56,8 +56,6 @@ public class LSTM extends RecurrentComputeGraph
 		ComputeNode endForgetSigmoid=addNode("endForgetSigmoid", new Sigmoid());
 		ComputeNode endForgetEbeMult=addNode("endForgetEbeMult", new EbeMult());
 		
-		ComputeNode outputWeights=addNode("outputWeights", new ParamMMult(generateWeightMatrix(outputShape[0]*outputShape[1], outputShape[0]*outputShape[1])));
-		ComputeNode outputBiases=addNode("outputBiases", new ParamMAdd(generateBiasMatrix(outputShape[0]*outputShape[1], 1)));
 		ComputeNode outputTanH=addNode("outputTanH", new TanH());
 		
 		ComputeNode trainingOutputsNode=addNode("training outputs", new Input());
@@ -84,16 +82,14 @@ public class LSTM extends RecurrentComputeGraph
 		updateContentBiases.setInputOutputNode(new ComputeNode[]{updateContentWeights}, new ComputeNode[]{updateContentTanH});
 		updateContentTanH.setInputOutputNode(new ComputeNode[]{updateContentBiases}, new ComputeNode[]{updateAmountEbeMult});
 		
-		updateContentAdd.setInputOutputNode(new ComputeNode[]{startForgetEbeMult, updateAmountEbeMult}, new ComputeNode[]{outputWeights});
+		updateContentAdd.setInputOutputNode(new ComputeNode[]{startForgetEbeMult, updateAmountEbeMult}, new ComputeNode[]{outputTanH});
 		
 		endForgetWeights.setInputOutputNode(new ComputeNode[]{combine}, new ComputeNode[]{endForgetBiases});
 		endForgetBiases.setInputOutputNode(new ComputeNode[]{endForgetWeights}, new ComputeNode[]{endForgetSigmoid});
 		endForgetSigmoid.setInputOutputNode(new ComputeNode[]{endForgetBiases}, new ComputeNode[]{endForgetEbeMult});
 		endForgetEbeMult.setInputOutputNode(new ComputeNode[]{outputTanH, endForgetSigmoid}, new ComputeNode[]{cost});
 		
-		outputWeights.setInputOutputNode(new ComputeNode[]{updateContentAdd}, new ComputeNode[]{outputBiases});
-		outputBiases.setInputOutputNode(new ComputeNode[]{outputWeights}, new ComputeNode[]{outputTanH});
-		outputTanH.setInputOutputNode(new ComputeNode[]{outputBiases}, new ComputeNode[]{endForgetEbeMult});
+		outputTanH.setInputOutputNode(new ComputeNode[]{updateContentAdd}, new ComputeNode[]{endForgetEbeMult});
 		
 		trainingOutputsNode.setInputOutputNode(new ComputeNode[]{trainingOutputsNode}, new ComputeNode[]{cost});
 		cost.setInputOutputNode(new ComputeNode[]{endForgetEbeMult, trainingOutputsNode}, new ComputeNode[]{cost});

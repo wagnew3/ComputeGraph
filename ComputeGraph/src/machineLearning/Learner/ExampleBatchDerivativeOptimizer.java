@@ -13,7 +13,7 @@ import vertex.ComputeNode;
 public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 {
 	
-	static int numberThreads=2;
+	static int numberThreads=12;
 	
 	private List<Hashtable<ComputeNode, Matrix>> examples;
 	private List<Hashtable<ComputeNode, Matrix>> validationExamples;
@@ -66,12 +66,13 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 				
 				for(int threadInd=0; threadInd<threads.length; threadInd++)
 				{
-					threads[threadInd].reset();;
+					threads[threadInd].reset();
 				}
 				for(int threadInd=0; threadInd<threads.length; threadInd++)
 				{
 					threads[threadInd].setExamples(batchExamples);
-				}
+				}			
+				
 				while(!DeriveThread.examplesEmpty())
 				{
 					try 
@@ -152,9 +153,10 @@ class DeriveThread extends Thread
 	private static volatile Hashtable<ComputeNode, Matrix>[] batchExamples;
 	private static volatile int exampleInd;
 	public volatile boolean stop;
-	private volatile ComputeGraph computeGraph;
+	private static volatile ComputeGraph computeGraph;
 	public volatile Hashtable<ComputeNode, Matrix> batchParameterDerivatives;
 	
+	private static final int batchGetSize=10;
 	
 	public DeriveThread(ComputeGraph computeGraph)
 	{
@@ -170,21 +172,24 @@ class DeriveThread extends Thread
 	{
 		while(!stop)
 		{
-			Hashtable<ComputeNode, Matrix> example=getNextExample();
-			if(example!=null)
+			Hashtable<ComputeNode, Matrix>[] examples=getNextExamples();
+			if(examples!=null)
 			{
-				Hashtable<ComputeNode, Matrix> parameterDerivatives=computeGraph.derive(example);
-				for(ComputeNode nodeDeriv: parameterDerivatives.keySet())
+				for(Hashtable<ComputeNode, Matrix> example: examples)
 				{
-					synchronized(batchParameterDerivatives)
+					Hashtable<ComputeNode, Matrix> parameterDerivatives=computeGraph.derive(example);
+					for(ComputeNode nodeDeriv: parameterDerivatives.keySet())
 					{
-						if(batchParameterDerivatives.get(nodeDeriv)==null)
+						synchronized(computeGraph)
 						{
-							batchParameterDerivatives.put(nodeDeriv, parameterDerivatives.get(nodeDeriv));
-						}
-						else
-						{
-							batchParameterDerivatives.get(nodeDeriv).omad(parameterDerivatives.get(nodeDeriv));
+							if(batchParameterDerivatives.get(nodeDeriv)==null)
+							{
+								batchParameterDerivatives.put(nodeDeriv, parameterDerivatives.get(nodeDeriv));
+							}
+							else
+							{
+								batchParameterDerivatives.get(nodeDeriv).omad(parameterDerivatives.get(nodeDeriv));
+							}
 						}
 					}
 				}
@@ -192,19 +197,20 @@ class DeriveThread extends Thread
 		}
 	}
 	
-	public static Hashtable<ComputeNode, Matrix> getNextExample()
+	public static Hashtable<ComputeNode, Matrix>[] getNextExamples()
 	{
-		synchronized(batchExamples)
+		synchronized(computeGraph)
 		{
 			if(exampleInd<batchExamples.length)
 			{
-				Hashtable<ComputeNode, Matrix> example=batchExamples[exampleInd];
-				batchExamples[exampleInd]=null;
-				if(exampleInd<batchExamples.length-1)
+				Hashtable<ComputeNode, Matrix> examples[]=new Hashtable[Math.min(batchGetSize, batchExamples.length-exampleInd)];
+				for(int examplesInd=0; examplesInd<examples.length; examplesInd++)
 				{
+					examples[examplesInd]=batchExamples[exampleInd];
+					batchExamples[exampleInd]=null;
 					exampleInd++;
 				}
-				return example;
+				return examples;
 			}
 			else
 			{
@@ -215,7 +221,7 @@ class DeriveThread extends Thread
 	
 	public static boolean examplesEmpty()
 	{
-		synchronized(batchExamples)
+		synchronized(computeGraph)
 		{
 			return batchExamples[batchExamples.length-1]==null;
 		}
@@ -223,8 +229,9 @@ class DeriveThread extends Thread
 	
 	public void reset()
 	{
+		batchExamples=new Hashtable[0];
 		exampleInd=0;
-		synchronized(batchParameterDerivatives)
+		synchronized(computeGraph)
 		{
 			batchParameterDerivatives=new Hashtable<>();
 		}
