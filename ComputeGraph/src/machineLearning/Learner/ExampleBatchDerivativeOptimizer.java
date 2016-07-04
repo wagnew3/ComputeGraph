@@ -73,15 +73,28 @@ public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 					threads[threadInd].setExamples(batchExamples);
 				}			
 				
-				while(!DeriveThread.examplesEmpty())
+				boolean allDone=false;
+				while(!allDone)
 				{
-					try 
+					allDone=true;
+					for(int threadInd=0; threadInd<threads.length; threadInd++)
 					{
-						Thread.sleep(1);
-					} 
-					catch (InterruptedException e) 
+						if(!threads[threadInd].done)
+						{
+							allDone=false;
+							break;
+						}
+					}
+					if(!allDone)
 					{
-						e.printStackTrace();
+						try 
+						{
+							Thread.sleep(1);
+						} 
+						catch (InterruptedException e) 
+						{
+							e.printStackTrace();
+						}
 					}
 				}
 				
@@ -156,6 +169,8 @@ class DeriveThread extends Thread
 	private static volatile ComputeGraph computeGraph;
 	public volatile Hashtable<ComputeNode, Matrix> batchParameterDerivatives;
 	
+	public volatile boolean done;
+	
 	private static final int batchGetSize=100;
 	
 	public DeriveThread(ComputeGraph computeGraph)
@@ -193,6 +208,10 @@ class DeriveThread extends Thread
 						}
 					}
 				}
+			}
+			else
+			{
+				done=true;
 			}
 		}
 	}
@@ -243,6 +262,7 @@ class DeriveThread extends Thread
 		{
 			this.batchExamples=batchExamples;
 		}
+		done=false;
 	}
 	
 }

@@ -16,9 +16,6 @@ import org.graphstream.ui.swingViewer.View;
 import org.graphstream.ui.swingViewer.Viewer;
 
 import graph.ComputeGraph;
-import machineLearning.Learner.Adam;
-import machineLearning.Learner.BackPropagation;
-import machineLearning.Learner.ExampleBatchDerivativeOptimizer;
 import machineLearning.Learner.*;
 import machineLearning.activationFunction.Sigmoid;
 import machineLearning.activationFunction.TanH;
@@ -30,6 +27,7 @@ import machineLearning.matrixTransform.Combine;
 import machineLearning.matrixTransform.ParamMAdd;
 import machineLearning.matrixTransform.ParamMMult;
 import machineLearning.matrixTransform.Split;
+import machineLearning.networkComponents.DeepLSTM;
 import machineLearning.networkComponents.LSTM;
 import machineLearning.networkComponents.RecurrentComputeGraph;
 import machineLearning.neuralNetworks.RecurrentNetwork;
@@ -240,7 +238,8 @@ public class TestRecurrentNeuralNetworks
 			}
 		}
 		
-		RecurrentComputeGraph lstm=new LSTM("lstm", inputShape, outputShape);
+		RecurrentComputeGraph lstm=new DeepLSTM("lstm", inputShape, outputShape);
+				//new LSTM("lstm", inputShape, outputShape);
 		
 		//new VisualizeGraph(lstm);
 		
@@ -249,10 +248,10 @@ public class TestRecurrentNeuralNetworks
 		//new VisualizeGraph(rn.unrolledNetwork);
 		
 		ExampleBatchDerivativeOptimizer optimizer
-			//=new RProp(null, null, 150000, 1000);
+			=new RProp(null, null, 300, 1000);
 			//=new BackPropagation(null, null, 30000, 1000, 0.1f);
-			//=new Adam(null, null, 30000, 1000);
-			=new Nestrov(null, null, 1000, 1000, 0.1f, 0.95f);
+			//=new Adam(null, null, 1000, 1000);
+			//=new Nestrov(null, null, 1000, 1000, 0.1f, 0.95f);
 		rn.train(optimizer, trainingInputs, trainingOutputs, validationInputs, validationOutputs);
 	}
 	
