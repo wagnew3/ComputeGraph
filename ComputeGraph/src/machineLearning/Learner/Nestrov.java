@@ -121,38 +121,7 @@ public class Nestrov extends ExampleBatchDerivativeOptimizer
 					totalTrys++;	
 				}
 			}
-			
-			int length=25;
-			byte[] testInput="Here comes".getBytes();
-			String testOutput="[Here comes]";
-			Matrix shortMemory=((Constant)((ComputeNode)TestRecurrentNeuralNetworks.recurrentNetwork.getNode("inputMemoryInitialState")).getFunction()).getParameter();
-			Matrix longMemory=((Constant)((ComputeNode)TestRecurrentNeuralNetworks.recurrentNetwork.getNode("longTermMemoryInitialState")).getFunction()).getParameter();
-			for(int ind=0; ind<25; ind++)
-			{
-				if(ind<testInput.length)
-				{
-					Matrix inputMat=TestRecurrentNeuralNetworks.letterToVec(testInput[ind]);
-					Matrix[][] outputs
-						=TestRecurrentNeuralNetworks.recurrentNetwork
-							.getOutput(new Matrix[]{inputMat}, new Matrix[]{shortMemory, longMemory});
-					Matrix outputMat=outputs[0][0];
-					shortMemory=outputs[1][0];
-					longMemory=outputs[1][1];
-				}
-				else
-				{
-					Matrix inputMat=TestRecurrentNeuralNetworks.letterToVec((byte)testOutput.charAt(testOutput.length()-1));
-					Matrix[][] outputs
-						=TestRecurrentNeuralNetworks.recurrentNetwork
-							.getOutput(new Matrix[]{inputMat}, new Matrix[]{shortMemory, longMemory});
-					Matrix outputMat=outputs[0][0];
-					shortMemory=outputs[1][0];
-					longMemory=outputs[1][1];
-					testOutput+=TestRecurrentNeuralNetworks.vecToLetter(outputMat);
-				}
-			}
-			System.out.println("Recurrent Neural net text: "+testOutput);
-			
+				
 			/*
 			float max=-1;
 			int maxInd=-1;
@@ -179,6 +148,37 @@ public class Nestrov extends ExampleBatchDerivativeOptimizer
 			}
 			*/
 		}
+		
+		int length=25;
+		byte[] testInput="Here comes".getBytes();
+		String testOutput="[Here comes]";
+		Matrix shortMemory=((Constant)((ComputeNode)TestRecurrentNeuralNetworks.recurrentNetwork.getNode("inputMemoryInitialState")).getFunction()).getParameter();
+		Matrix longMemory=((Constant)((ComputeNode)TestRecurrentNeuralNetworks.recurrentNetwork.getNode("longTermMemoryInitialState")).getFunction()).getParameter();
+		for(int ind=0; ind<25; ind++)
+		{
+			if(ind<testInput.length)
+			{
+				Matrix inputMat=TestRecurrentNeuralNetworks.letterToVec(testInput[ind]);
+				Matrix[][] outputs
+					=TestRecurrentNeuralNetworks.recurrentNetwork
+						.getOutput(new Matrix[]{inputMat}, new Matrix[]{shortMemory, longMemory});
+				Matrix outputMat=outputs[0][0];
+				shortMemory=outputs[1][0];
+				longMemory=outputs[1][1];
+			}
+			else
+			{
+				Matrix inputMat=TestRecurrentNeuralNetworks.letterToVec((byte)testOutput.charAt(testOutput.length()-1));
+				Matrix[][] outputs
+					=TestRecurrentNeuralNetworks.recurrentNetwork
+						.getOutput(new Matrix[]{inputMat}, new Matrix[]{shortMemory, longMemory});
+				Matrix outputMat=outputs[0][0];
+				shortMemory=outputs[1][0];
+				longMemory=outputs[1][1];
+				testOutput+=TestRecurrentNeuralNetworks.vecToLetter(outputMat);
+			}
+		}
+		System.out.println("Recurrent Neural net text: "+testOutput);
 		
 		System.out.println("Number classified correctly: "+numberCorrect+"/"+totalTrys);
 		

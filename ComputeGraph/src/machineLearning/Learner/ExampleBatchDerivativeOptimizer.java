@@ -13,7 +13,7 @@ import vertex.ComputeNode;
 public abstract class ExampleBatchDerivativeOptimizer extends Optimizer
 {
 	
-	static int numberThreads=12;
+	static int numberThreads=24;
 	
 	private List<Hashtable<ComputeNode, Matrix>> examples;
 	private List<Hashtable<ComputeNode, Matrix>> validationExamples;

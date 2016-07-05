@@ -5,8 +5,10 @@ import java.util.List;
 
 import function.UpdatableDifferentiableFunction;
 import graph.ComputeGraph;
+import machineLearning.generalFunctions.Constant;
 import matrix.FMatrix;
 import matrix.Matrix;
+import test.TestRecurrentNeuralNetworks;
 import vertex.ComputeNode;
 
 public class RProp extends ExampleBatchDerivativeOptimizer
@@ -102,14 +104,14 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 		double totalTrys=0.0;
 		for(Hashtable<ComputeNode, Matrix> validationExample: validationExamples)
 		{
-			Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=cg.compute(validationExample);
+			Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> output=(Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>>)cg.compute(validationExample)[0];
 			for(int objectiveInd=0; objectiveInd<objectives.length; objectiveInd++)
 			{
 				if(output.get(objectives[objectiveInd])!=null)
 				{
 					totalError+=output.get(objectives[objectiveInd]).get(objectives[objectiveInd]).get(0, 0);
 					numberErrors++;
-					
+					/*
 					Matrix netOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]);
 					float netGuess=netOut.get(0, 0);
 					
@@ -126,7 +128,38 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 						int u=0;
 					}
 					totalTrys++;
+					*/
 					
+					Matrix netOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]);
+					Matrix trainOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[1]);
+					int highestNetInd=-1;
+					int highestTrainInd=-1;
+					float highestNet=Float.NEGATIVE_INFINITY;
+					float highestTrain=Float.NEGATIVE_INFINITY;
+					
+					for(int outInd=0; outInd<netOut.getLen(); outInd++)
+					{
+						if(highestNet<netOut.get(outInd, 0))
+						{
+							highestNet=netOut.get(outInd, 0);
+							highestNetInd=outInd;
+						}
+						if(highestTrain<trainOut.get(outInd, 0))
+						{
+							highestTrain=trainOut.get(outInd, 0);
+							highestTrainInd=outInd;
+						}
+					}
+					
+					if(highestNetInd==highestTrainInd)
+					{
+						numberCorrect++;
+					}
+					else
+					{
+						int u=0;
+					}
+					totalTrys++;	
 				}
 			}
 			/*
@@ -155,6 +188,37 @@ public class RProp extends ExampleBatchDerivativeOptimizer
 			}
 			*/
 		}
+		
+		int length=25;
+		byte[] testInput="Here comes".getBytes();
+		String testOutput="[Here comes]";
+		Matrix shortMemory=((Constant)((ComputeNode)TestRecurrentNeuralNetworks.recurrentNetwork.getNode("inputMemoryInitialState")).getFunction()).getParameter();
+		Matrix longMemory=((Constant)((ComputeNode)TestRecurrentNeuralNetworks.recurrentNetwork.getNode("longTermMemoryInitialState")).getFunction()).getParameter();
+		for(int ind=0; ind<25; ind++)
+		{
+			if(ind<testInput.length)
+			{
+				Matrix inputMat=TestRecurrentNeuralNetworks.letterToVec(testInput[ind]);
+				Matrix[][] outputs
+					=TestRecurrentNeuralNetworks.recurrentNetwork
+						.getOutput(new Matrix[]{inputMat}, new Matrix[]{shortMemory, longMemory});
+				Matrix outputMat=outputs[0][0];
+				shortMemory=outputs[1][0];
+				longMemory=outputs[1][1];
+			}
+			else
+			{
+				Matrix inputMat=TestRecurrentNeuralNetworks.letterToVec((byte)testOutput.charAt(testOutput.length()-1));
+				Matrix[][] outputs
+					=TestRecurrentNeuralNetworks.recurrentNetwork
+						.getOutput(new Matrix[]{inputMat}, new Matrix[]{shortMemory, longMemory});
+				Matrix outputMat=outputs[0][0];
+				shortMemory=outputs[1][0];
+				longMemory=outputs[1][1];
+				testOutput+=TestRecurrentNeuralNetworks.vecToLetter(outputMat);
+			}
+		}
+		System.out.println("Recurrent Neural net text: "+testOutput);
 		
 		System.out.println("Number classified correctly: "+numberCorrect+"/"+totalTrys);
 		
