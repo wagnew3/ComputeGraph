@@ -95,13 +95,15 @@ public class ComputeGraph extends SingleGraph
 		return outputs;
 	}
 	
-	public Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> compute(Hashtable<ComputeNode, Matrix> inputs)
+	//Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>>, Hashtable<ComputeNode, Matrix>
+	public Object[] compute(Hashtable<ComputeNode, Matrix> inputs)
 	{
 		if(computeOrder==null)
 		{
 			computeOrder=determineComputeOrder();
 		}
 		
+		Hashtable<ComputeNode, Matrix> allOutputs=new Hashtable<>();
 		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allInputs=new Hashtable<>();
 		for(ComputeNode inputNode: inputs.keySet())
 		{
@@ -125,7 +127,7 @@ public class ComputeGraph extends SingleGraph
 		
 		for(ComputeNode toCompute: computeOrder)
 		{
-			if(toCompute.getId().equals("input0"))
+			if(toCompute.getId().equals("outputTanH"))
 			{
 				int u=0;
 			}
@@ -135,6 +137,7 @@ public class ComputeGraph extends SingleGraph
 				Hashtable<ComputeNode, Matrix> nodeOutputs=toCompute.getOutput(allInputs.get(toCompute));
 				for(ComputeNode nodeOutputTo: nodeOutputs.keySet())
 				{
+					allOutputs.put(toCompute, nodeOutputs.get(nodeOutputTo));
 					if(allInputs.get(nodeOutputTo)==null)
 					{
 						allInputs.put(nodeOutputTo, new Hashtable<ComputeNode, Matrix>());
@@ -143,12 +146,13 @@ public class ComputeGraph extends SingleGraph
 				}
 			}
 		}
-		return allInputs;
+		return new Object[]{allInputs, allOutputs};
 	}
 	
 	public Hashtable<ComputeNode, Matrix> derive(Hashtable<ComputeNode, Matrix> inputs)
 	{
-		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allInputs=compute(inputs);
+		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> allInputs
+			=(Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>>)compute(inputs)[0];
 		
 		Hashtable<ComputeNode, Hashtable<ComputeNode, Matrix>> objectiveDerivatives=new Hashtable<>();
 		Hashtable<ComputeNode, Matrix> parameterDerivatives=new Hashtable<>();

@@ -59,6 +59,7 @@ public class BackPropagation extends ExampleBatchDerivativeOptimizer
 					totalError+=output.get(objectives[objectiveInd]).get(objectives[objectiveInd]).get(0, 0);
 					numberErrors++;
 					
+					/*
 					Matrix netOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]);
 					float netGuess=netOut.get(0, 0);
 					
@@ -73,7 +74,39 @@ public class BackPropagation extends ExampleBatchDerivativeOptimizer
 					else
 					{
 						int u=0;
+					}	
+					*/
+					
+					Matrix netOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[0]);
+					Matrix trainOut=output.get(objectives[objectiveInd]).get(objectives[objectiveInd].inputNodes[1]);
+					int highestNetInd=-1;
+					int highestTrainInd=-1;
+					float highestNet=Float.NEGATIVE_INFINITY;
+					float highestTrain=Float.NEGATIVE_INFINITY;
+					
+					for(int outInd=0; outInd<netOut.getLen(); outInd++)
+					{
+						if(highestNet<netOut.get(outInd, 0))
+						{
+							highestNet=netOut.get(outInd, 0);
+							highestNetInd=outInd;
+						}
+						if(highestTrain<trainOut.get(outInd, 0))
+						{
+							highestTrain=trainOut.get(outInd, 0);
+							highestTrainInd=outInd;
+						}
 					}
+					
+					if(highestNetInd==highestTrainInd)
+					{
+						numberCorrect++;
+					}
+					else
+					{
+						int u=0;
+					}
+					
 					totalTrys++;
 				}
 			}

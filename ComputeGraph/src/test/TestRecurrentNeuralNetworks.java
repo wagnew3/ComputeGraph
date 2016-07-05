@@ -2,6 +2,9 @@ package test;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -40,11 +43,14 @@ import visualization.VisualizeGraph;
 public class TestRecurrentNeuralNetworks 
 {
 	
+	public static RecurrentNetwork recurrentNetwork;
+	
 	public static void main(String[] args)
 	{
 		//testNormalNetwork();
 		//testSimpleRecurrentNetwork();
-		testGeneralRecurrentNetwork();
+		//testGeneralRecurrentNetwork();
+		testGeneralRecurrentNetworkText();
 	}
 	
 	static void testSimpleRecurrentNetwork()
@@ -253,8 +259,147 @@ public class TestRecurrentNeuralNetworks
 		rn.train(optimizer, trainingInputs, trainingOutputs, validationInputs, validationOutputs);
 	}
 	
+	static String currentDir=System.getProperty("user.dir");
+	
+	static void testGeneralRecurrentNetworkText()
+	{
+		int numberExamples=10000;
+		int exampleDuration=25;
+		
+		int[] inputShape=new int[]{30, 1};
+		int[] outputShape=new int[]{30,1};
+		
+		byte[] shakespeareText=null;
+		try 
+		{
+			shakespeareText=Files.readAllBytes(new File(currentDir+"/data/shakespeare").toPath());
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		
+		generated=0;
+		int shakespeareInd=0;
+		Matrix[][][] trainingInputs=new Matrix[numberExamples][][];
+		Matrix[][][] trainingOutputs=new Matrix[numberExamples][][];
+		for(int exampleInd=0; exampleInd<trainingInputs.length; exampleInd++)
+		{
+			trainingInputs[exampleInd]=new Matrix[exampleDuration][1];
+			trainingOutputs[exampleInd]=new Matrix[exampleDuration][1];
+			for(int timeStep=0; timeStep<exampleDuration; timeStep++)
+			{
+				trainingInputs[exampleInd][timeStep][0]=letterToVec(shakespeareText[shakespeareInd]);
+				trainingOutputs[exampleInd][timeStep][0]=letterToVec(shakespeareText[shakespeareInd+1]);
+				shakespeareInd++;
+			}
+		}
+		
+		generated=0;
+		Matrix[][][] validationInputs=new Matrix[numberExamples/5][][];
+		Matrix[][][] validationOutputs=new Matrix[numberExamples/5][][];
+		for(int exampleInd=0; exampleInd<validationInputs.length; exampleInd++)
+		{
+			validationInputs[exampleInd]=new Matrix[exampleDuration][1];
+			validationOutputs[exampleInd]=new Matrix[exampleDuration][1];
+			for(int timeStep=0; timeStep<exampleDuration; timeStep++)
+			{
+				validationInputs[exampleInd][timeStep][0]=letterToVec(shakespeareText[shakespeareInd]);
+				validationOutputs[exampleInd][timeStep][0]=letterToVec(shakespeareText[shakespeareInd+1]);
+				shakespeareInd++;
+			}
+		}
+		
+		RecurrentComputeGraph lstm=//new DeepLSTM("lstm", inputShape, outputShape, 3);
+				new LSTM("lstm", inputShape, outputShape);
+		
+		new VisualizeGraph(lstm);
+		
+		RecurrentNetwork rn=new RecurrentNetwork("General Recurrent Network", lstm, exampleDuration);
+		recurrentNetwork=rn;
+		
+		//new VisualizeGraph(rn.unrolledNetwork);
+		
+		ExampleBatchDerivativeOptimizer optimizer
+			//=new RProp(null, null, 300, 1000);
+			//=new BackPropagation(null, null, 300, 1000, 0.1f);
+			//=new Adam(null, null, 1000, 1000);
+			=new Nestrov(null, null, 1000, 1000, 0.1f, 0.95f);
+		rn.train(optimizer, trainingInputs, trainingOutputs, validationInputs, validationOutputs);
+	}
+	
 	static Random rand=new Random(52341);
 	static int generated;
+	
+	public static Matrix letterToVec(byte letter)
+	{
+		Matrix vec=new FMatrix(30, 1);
+		if(letter>=65 && letter<=90)
+		{
+			letter+=32;
+		}
+		if(letter>=97 && letter<=122)
+		{
+			letter-=97;
+			vec.set(letter, 0, 1.0f);
+		}
+		else
+		{
+			switch(letter)
+			{
+				case 32:
+					vec.set(26, 0, 1.0f);
+					break;
+				case 46:
+					vec.set(27, 0, 1.0f);
+					break;
+				case 44:
+					vec.set(28, 0, 1.0f);
+					break;
+				case 39:
+					vec.set(29, 0, 1.0f);
+					break;
+				default:
+					vec.set(26, 0, 1.0f);
+					break;
+			}
+		}
+		return vec;
+	}
+	
+	public static char vecToLetter(Matrix vec)
+	{
+		int highestInd=-1;
+		float highestVal=Float.NEGATIVE_INFINITY;
+		for(int vecInd=0; vecInd<vec.getLen(); vecInd++)
+		{
+			if(highestVal<vec.get(vecInd, 0))
+			{
+				highestVal=vec.get(vecInd, 0);
+				highestInd=vecInd;
+			}
+		}
+		if(highestInd<26)
+		{
+			return (char)(highestInd+97);
+		}
+		else
+		{
+			switch(highestInd)
+			{
+				case 26:
+					return (char)32;
+				case 27:
+					return (char)46;
+				case 28:
+					return (char)44;
+				case 29:
+					return (char)39;
+				default:
+					return (char)32;
+			}
+		}
+	}
 	
 	private static Matrix[] generateAddData(int length)
 	{

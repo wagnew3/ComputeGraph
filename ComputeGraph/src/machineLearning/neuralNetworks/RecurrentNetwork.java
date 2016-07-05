@@ -31,10 +31,12 @@ public class RecurrentNetwork extends ComputeGraph
 	
 	public ComputeGraph unrolledNetwork;
 	List<ComputeNode> unrolledInputs;
-	public List<Constant> initialStates;
+	public List<ComputeNode> initialStates;
 	List<ComputeNode> inputNodes;
-	List<ComputeNode> memoryNodes;
+	List<ComputeNode> memoryInNodes;
+	List<ComputeNode> memoryOutNodes;
 	List<ComputeNode> computeOuts;
+	List<ComputeNode> objectives;
 	ComputeNode[] unrolledObjectiveNodes;
 	boolean trainOutputMode;
 	int unrolls;
@@ -63,9 +65,11 @@ public class RecurrentNetwork extends ComputeGraph
 			int unrolls)
 	{
 		this.unrolls=unrolls;
+		
 		trainOutputMode=true;
 
-		cloneNodes(reccurentUnit, this, "");
+		Hashtable<ComputeNode, ComputeNode> clonedMap=cloneNodes(reccurentUnit, this, "");
+		
 		
 		Object[] unrolledData=unroll(reccurentUnit, initialState, inputNodes, memoryInNodes, memoryOutNodes, 
 				objectives, trainingOutputNodes, unrolls);
@@ -73,22 +77,73 @@ public class RecurrentNetwork extends ComputeGraph
 		unrolledInputs=(List<ComputeNode>)(unrolledData[1]);
 		unrolledObjectiveNodes=(ComputeNode[])(unrolledData[2]);
 		
+		this.initialStates=new ArrayList<>();
+		this.inputNodes=new ArrayList<>();
+		this.memoryInNodes=new ArrayList<>();
+		this.memoryOutNodes=new ArrayList<>();
+		this.computeOuts=new ArrayList<>();
+		this.objectives=new ArrayList<>();
+		for(ComputeNode node: initialState)
+		{
+			this.initialStates.add(clonedMap.get(node));
+			clonedMap.get(node).setOutputNode(new ComputeNode[]{});
+		}
+		for(ComputeNode node: inputNodes)
+		{
+			this.inputNodes.add(clonedMap.get(node));
+		}
+		for(ComputeNode node: memoryInNodes)
+		{
+			this.memoryInNodes.add(clonedMap.get(node));
+			clonedMap.get(node).setInputNode(new ComputeNode[]{clonedMap.get(node)});
+		}
+		for(ComputeNode node: memoryOutNodes)
+		{
+			this.memoryOutNodes.add(clonedMap.get(node));
+		}
+		for(ComputeNode node: computeOuts)
+		{
+			this.computeOuts.add(clonedMap.get(node));
+		}
+		for(ComputeNode node: objectives)
+		{
+			this.objectives.add(clonedMap.get(node));
+		}
+		
 		setOutputVertices(computeOuts);
 	}
 	
 		   //[0]=output, [1]=newRememberedState
-	public Hashtable<ComputeNode, Matrix> getOutput(Hashtable<ComputeNode, Matrix> inputs, Hashtable<ComputeNode, Matrix> rememberedState)
+	public Matrix[][] getOutput(Matrix[] inputs, Matrix[] rememberedState)
 	{
 		if(trainOutputMode)
 		{
-			setOutputVertices(computeOuts);
+			setOutputVertices(objectives);
 			trainOutputMode=false;
 		}
-		Hashtable<ComputeNode, Matrix> inputs=new Hashtable<>();
-		inputs.put(inputNode, input);
-		inputs.put(memoryNode, rememberedState);
-		Hashtable<ComputeNode, Matrix> outputs=getOutput(inputs);
-		return new Matrix[]{outputs.get(inputNode), outputs.get(memoryNode)};
+		Hashtable<ComputeNode, Matrix> inputsTable=new Hashtable<>();
+		for(int inputInd=0; inputInd<inputs.length; inputInd++)
+		{
+			inputsTable.put(inputNodes.get(inputInd), inputs[inputInd]);
+		}
+		for(int inputInd=0; inputInd<memoryInNodes.size(); inputInd++)
+		{
+			inputsTable.put(memoryInNodes.get(inputInd), rememberedState[inputInd]);
+		}
+		
+		Hashtable<ComputeNode, Matrix> outputs=(Hashtable<ComputeNode, Matrix>)compute(inputsTable)[1];
+		Matrix[] outputsArray=new Matrix[computeOuts.size()];
+		for(int outputInd=0; outputInd<outputsArray.length; outputInd++)
+		{
+			outputsArray[outputInd]=outputs.get(computeOuts.get(outputInd));
+		}
+		Matrix[] memoryOutputsArray=new Matrix[memoryOutNodes.size()];
+		for(int outputInd=0; outputInd<memoryOutputsArray.length; outputInd++)
+		{
+			memoryOutputsArray[outputInd]=outputs.get(memoryOutNodes.get(outputInd));
+		}
+		
+		return new Matrix[][]{outputsArray, memoryOutputsArray};
 	}
 	
 	public void train(ExampleBatchDerivativeOptimizer trainer, Matrix[][][] trainingInputs,
