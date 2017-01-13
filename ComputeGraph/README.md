@@ -6,7 +6,7 @@ This is a GPU accelerated Java data flow graph library in the same vein as Tenso
 ##Visualization
 This library is integrated with <a href="http://graphstream-project.org/">GraphStream</a>, allowing you to visualize and debug your data flow graphs. Below on the left is a single LSTM unit; to the right of it is that LSTM unit unrolled 25 times.
 
-<img src="https://github.com/wagnew/ComputeGraph/tree/master/ComputeGraph/data/LSTM.jpg" width="400"> 
+<img src="https://github.com/wagnew/ComputeGraph/tree/master/ComputeGraph/data/LSTM.jpg"> 
 
 ##Implemented Algorithms
 * Sigmoid, TanH, Add, Multiply, Ebe Multiply, Matrix Combine and Split Differentiable Vertices
