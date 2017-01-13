@@ -40,7 +40,7 @@ import jcuda.jcublas.cublasHandle;
 public class FMatrix extends Matrix
 {
 	
-	public static boolean GPU=false;
+	public static boolean GPU=true;
 	protected int rows;
 	protected int columns;
 	public float[] data;

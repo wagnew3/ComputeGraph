@@ -252,7 +252,7 @@ public class TestRecurrentNeuralNetworks
 		new VisualizeGraph(rn.unrolledNetwork);
 		
 		ExampleBatchDerivativeOptimizer optimizer
-			=new RProp(null, null, 300, 1000);
+			=new RProp(null, null, 300, 10000);
 			//=new BackPropagation(null, null, 300, 1000, 0.1f);
 			//=new Adam(null, null, 1000, 1000);
 			//=new Nestrov(null, null, 1000, 1000, 0.1f, 0.95f);
@@ -313,12 +313,12 @@ public class TestRecurrentNeuralNetworks
 		RecurrentComputeGraph lstm=//new DeepLSTM("lstm", inputShape, outputShape, 3);
 				new LSTM("lstm", inputShape, outputShape);
 		
-		//new VisualizeGraph(lstm);
+		new VisualizeGraph(lstm);
 		
 		RecurrentNetwork rn=new RecurrentNetwork("General Recurrent Network", lstm, exampleDuration);
 		recurrentNetwork=rn;
 		
-		//new VisualizeGraph(rn.unrolledNetwork);
+		new VisualizeGraph(rn.unrolledNetwork);
 		
 		ExampleBatchDerivativeOptimizer optimizer
 			=new RProp(null, null, 100000, 1000);

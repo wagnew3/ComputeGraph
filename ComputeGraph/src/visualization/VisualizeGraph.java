@@ -37,7 +37,7 @@ public class VisualizeGraph
 		String styleSheet=null;
 		try 
 		{
-			styleSheet = new String(Files.readAllBytes(new File("/home/c/git/ComputeGraph/ComputeGraph/src/visualization/userTransfersGraphStyleSheet.css").toPath()));
+			styleSheet = new String(Files.readAllBytes(new File(System.getProperty("user.dir")+"/src/visualization/userTransfersGraphStyleSheet.css").toPath()));
 		} 
 		catch (IOException e) 
 		{
