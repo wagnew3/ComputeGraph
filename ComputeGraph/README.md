@@ -8,8 +8,6 @@ This library is integrated with <a href="http://graphstream-project.org/">GraphS
 
 <img src="https://github.com/wagnew/ComputeGraph/tree/master/ComputeGraph/data/LSTM.jpg" width="400"> 
 
-<img src="https://github.com/wagnew/ComputeGraph/tree/master/ComputeGraph/data/LSTMU25.jpg" width="400">
-
 ##Implemented Algorithms
 * Sigmoid, TanH, Add, Multiply, Ebe Multiply, Matrix Combine and Split Differentiable Vertices
 * Cross Entropy and Euclidean Loss Functions
